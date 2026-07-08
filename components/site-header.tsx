@@ -9,6 +9,7 @@ const navLinks = [
   { href: '/mulklar', label: 'Mulklar' },
   { href: '/auktsion', label: 'E-Auktsion' },
   { href: '/rent-to-own', label: 'Rent-to-Own' },
+  { href: '/narx-baholash', label: 'AI Baholash' },
   { href: '/investor', label: 'Investor' },
   { href: '/rieltor', label: 'Rieltor' },
   { href: '/dashboard', label: 'Kabinet' },
