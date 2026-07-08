@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Building2, Menu, X } from 'lucide-react'
+import { Building2, Menu, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const navLinks = [
@@ -11,8 +11,16 @@ const navLinks = [
   { href: '/rent-to-own', label: 'Rent-to-Own' },
   { href: '/narx-baholash', label: 'AI Baholash' },
   { href: '/investor', label: 'Investor' },
-  { href: '/rieltor', label: 'Rieltor' },
+  { href: '/bank', label: 'Bank' },
   { href: '/dashboard', label: 'Kabinet' },
+]
+
+const mobileOnlyLinks = [
+  { href: '/rieltor', label: 'Rieltor' },
+  { href: '/xaridor', label: 'Xaridor' },
+  { href: '/kompaniya', label: 'Kompaniya' },
+  { href: '/davlat-operator', label: 'Davlat operatori' },
+  { href: '/profil', label: 'Profil sozlamalari' },
 ]
 
 export function SiteHeader() {
@@ -43,6 +51,15 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Profil sozlamalari"
+            nativeButton={false}
+            render={<Link href="/profil" />}
+          >
+            <UserRound className="size-4" aria-hidden="true" />
+          </Button>
           <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/kirish" />}>
             Kirish
           </Button>
@@ -67,7 +84,7 @@ export function SiteHeader() {
           className="flex flex-col gap-1 border-t border-border bg-background px-4 py-3 md:hidden"
           aria-label="Mobil navigatsiya"
         >
-          {navLinks.map((link) => (
+          {[...navLinks, ...mobileOnlyLinks].map((link) => (
             <Link
               key={link.href}
               href={link.href}
