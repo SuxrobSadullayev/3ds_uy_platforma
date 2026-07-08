@@ -21,13 +21,14 @@ import {
   type Property,
 } from '@/lib/data/properties'
 
-type Tab = 'sevimlilar' | 'solishtirish' | 'chat' | 'uchrashuvlar'
+type Tab = 'sevimlilar' | 'solishtirish' | 'chat' | 'uchrashuvlar' | 'referral'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sevimlilar', label: 'Sevimlilar' },
   { id: 'solishtirish', label: 'Solishtirish' },
   { id: 'chat', label: 'Chat' },
   { id: 'uchrashuvlar', label: 'Uchrashuvlar' },
+  { id: 'referral', label: 'Referral' },
 ]
 
 export function XaridorClient() {
@@ -83,6 +84,7 @@ export function XaridorClient() {
       )}
       {tab === 'chat' && <ChatTab />}
       {tab === 'uchrashuvlar' && <AppointmentsTab />}
+      {tab === 'referral' && <ReferralTab />}
     </div>
   )
 }
@@ -473,6 +475,130 @@ const APPOINTMENT_LABEL: Record<Appointment['status'], string> = {
   tasdiqlangan: 'Tasdiqlangan',
   kutmoqda: 'Kutmoqda',
   yakunlangan: 'Yakunlangan',
+}
+
+interface Referral {
+  name: string
+  date: string
+  status: "ro'yxatdan o'tdi" | 'bitim yakunladi' | 'kutilmoqda'
+  bonus: number
+}
+
+const REFERRALS: Referral[] = [
+  { name: 'Bekzod A.', date: '2026-06-18', status: 'bitim yakunladi', bonus: 500 },
+  { name: 'Malika R.', date: '2026-06-27', status: "ro'yxatdan o'tdi", bonus: 100 },
+  { name: 'Sardor T.', date: '2026-07-02', status: "ro'yxatdan o'tdi", bonus: 100 },
+  { name: 'Dilshod K.', date: '2026-07-06', status: 'kutilmoqda', bonus: 0 },
+]
+
+const REFERRAL_BADGE: Record<Referral['status'], string> = {
+  'bitim yakunladi': 'bg-primary/10 text-primary',
+  "ro'yxatdan o'tdi": 'bg-accent/10 text-accent-foreground',
+  kutilmoqda: 'bg-muted text-muted-foreground',
+}
+
+function ReferralTab() {
+  const [copied, setCopied] = useState(false)
+  const referralCode = 'MULK-SUXROB-2026'
+  const totalBonus = REFERRALS.reduce((sum, r) => sum + r.bonus, 0)
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(
+        `https://3dmulk.uz/royxatdan-otish?ref=${referralCode}`,
+      )
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard mavjud bo'lmasa jim o'tamiz
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Taklif qilinganlar</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{REFERRALS.length} ta</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Jami bonus ball</p>
+          <p className="mt-1 text-2xl font-bold text-primary">{totalBonus} ball</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Keyingi mukofot</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
+            1000 ball = 1% chegirma
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+        <p className="text-sm font-semibold text-card-foreground">
+          Sizning referral havolangiz
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <code className="flex-1 overflow-x-auto rounded-lg border border-border bg-muted px-3 py-2 text-sm text-foreground">
+            {`https://3dmulk.uz/royxatdan-otish?ref=${referralCode}`}
+          </code>
+          <Button size="sm" onClick={copyCode}>
+            {copied ? (
+              <>
+                <Check className="size-4" aria-hidden="true" />
+                Nusxalandi
+              </>
+            ) : (
+              'Nusxalash'
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Do&apos;stingiz ro&apos;yxatdan o&apos;tsa — 100 ball, bitim yakunlasa — 500
+          ball olasiz. Ballar chegirma sifatida ishlatiladi.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
+        <table className="w-full min-w-[480px] text-left text-sm">
+          <caption className="sr-only">Taklif qilingan do&apos;stlar ro&apos;yxati</caption>
+          <thead>
+            <tr className="border-b border-border text-xs text-muted-foreground">
+              <th scope="col" className="px-4 py-3 font-medium">
+                Do&apos;st
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                Sana
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                Holati
+              </th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                Bonus
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {REFERRALS.map((r) => (
+              <tr key={r.name}>
+                <td className="px-4 py-3 font-medium text-card-foreground">{r.name}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.date}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${REFERRAL_BADGE[r.status]}`}
+                  >
+                    {r.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3 font-semibold text-primary">
+                  {r.bonus > 0 ? `+${r.bonus} ball` : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
 }
 
 function AppointmentsTab() {
