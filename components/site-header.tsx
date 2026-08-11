@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Building2, Menu, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const navLinks = [
   { href: '/mulklar', label: 'Mulklar' },
@@ -16,7 +17,7 @@ const navLinks = [
 ]
 
 const mobileOnlyLinks = [
-  { href: '/rieltor', label: 'Rieltor' },
+  { href: '/rieltor', label: 'Rieltor CRM' },
   { href: '/xaridor', label: 'Xaridor' },
   { href: '/kompaniya', label: 'Kompaniya' },
   { href: '/davlat-operator', label: 'Davlat operatori' },
@@ -50,33 +51,37 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Profil sozlamalari"
-            nativeButton={false}
-            render={<Link href="/profil" />}
-          >
-            <UserRound className="size-4" aria-hidden="true" />
-          </Button>
-          <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/kirish" />}>
-            Kirish
-          </Button>
-          <Button size="sm" nativeButton={false} render={<Link href="/royxatdan-otish" />}>
-            {"Ro'yxatdan o'tish"}
-          </Button>
-        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
 
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center rounded-md text-foreground md:hidden"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          aria-label={open ? 'Menyuni yopish' : 'Menyuni ochish'}
-        >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+          <div className="hidden items-center gap-2 md:flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Profil sozlamalari"
+              nativeButton={false}
+              render={<Link href="/profil" />}
+            >
+              <UserRound className="size-4" aria-hidden="true" />
+            </Button>
+            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/kirish" />}>
+              Kirish
+            </Button>
+            <Button size="sm" nativeButton={false} render={<Link href="/royxatdan-otish" />}>
+              {"Ro'yxatdan o'tish"}
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            className="flex size-10 items-center justify-center rounded-md text-foreground md:hidden"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            aria-label={open ? 'Menyuni yopish' : 'Menyuni ochish'}
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
 
       {open && (

@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { AiAssistant } from '@/components/ai/ai-assistant'
+import { SiteMobileNav } from '@/components/site-mobile-nav'
 import './globals.css'
 
 const geistSans = Geist({ subsets: ['latin'], variable: '--font-geist-sans' })
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light',
+  colorScheme: 'dark light',
   themeColor: '#1e3a5f',
 }
 
@@ -50,11 +51,12 @@ export default function RootLayout({
   return (
     <html
       lang="uz"
-      className={`bg-background ${geistSans.variable} ${geistMono.variable}`}
+      className={`dark bg-background ${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased pb-16 md:pb-0">
         {children}
         <AiAssistant />
+        <SiteMobileNav />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
