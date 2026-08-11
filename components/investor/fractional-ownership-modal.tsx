@@ -1,211 +1,146 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { CheckCircle2, DollarSign, Layers, PieChart, ShieldCheck, X } from 'lucide-react'
-import { formatPrice } from '@/lib/data/properties'
+import React, { useState } from 'react'
+import { CheckCircle2, DollarSign, PieChart, ShieldCheck, X } from 'lucide-react'
 
 export interface FractionalOwnershipModalProps {
   isOpen: boolean
   onClose: () => void
   propertyTitle?: string
-  totalPriceUzxs?: number
-  estimatedMonthlyRentUzxs?: number
+  totalPrice?: number
 }
 
 export function FractionalOwnershipModal({
   isOpen,
   onClose,
-  propertyTitle = 'Tashkent City Business Penthouse',
-  totalPriceUzxs = 2_400_000_000,
-  estimatedMonthlyRentUzxs = 24_000_000,
+  propertyTitle = 'Tashkent City Premium Lot',
+  totalPrice = 1500000000,
 }: FractionalOwnershipModalProps) {
-  const [sharePercent, setSharePercent] = useState<number>(5) // 5% default
-  const [fullName, setFullName] = useState('')
+  const [sharePercent, setSharePercent] = useState(5)
+  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card' | 'crypto'>('bank')
   const [isSuccess, setIsSuccess] = useState(false)
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
-  const sharePriceUzxs = Math.round(totalPriceUzxs * (sharePercent / 100))
-  const monthlyDividendUzxs = Math.round(estimatedMonthlyRentUzxs * (sharePercent / 100))
-  const annualDividendUzxs = monthlyDividendUzxs * 12
+  const shareCost = Math.round((totalPrice * sharePercent) / 100)
+  const monthlyDividend = Math.round((shareCost * 0.12) / 12)
 
-  function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsSuccess(true)
     setTimeout(() => {
       setIsSuccess(false)
       onClose()
-    }, 2000)
+    }, 1800)
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="fractional-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <PieChart className="size-5" aria-hidden="true" />
-            </div>
-            <div>
-              <h2 id="fractional-title" className="text-base font-bold text-card-foreground">
-                Ulushli (Fraksional) Mulk Sotib Olish
-              </h2>
-              <p className="text-xs text-muted-foreground">{propertyTitle}</p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/80 bg-background p-6 shadow-2xl">
+        <button
+          onClick={onClose}
+          type="button"
+          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Yopish"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="flex items-center gap-3 border-b border-border/60 pb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
+            <PieChart className="h-5 w-5" />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label="Yopish"
-          >
-            <X className="size-4" aria-hidden="true" />
-          </button>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Fraksional (Ulushli) Mulk Investitsiyasi</h3>
+            <p className="text-xs text-muted-foreground">{propertyTitle}</p>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto p-6">
-          {isSuccess ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center animate-in zoom-in-95">
-              <div className="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <CheckCircle2 className="size-8" aria-hidden="true" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground">
-                Ulush sotib olish arizasi qabul qilindi!
-              </h3>
-              <p className="max-w-xs text-xs text-muted-foreground">
-                Menejerimiz siz ko&apos;rsatgan telefon raqami orqali bog&apos;lanadi va shartnomani rasmiylashtiradi.
-              </p>
+        {isSuccess ? (
+          <div className="my-8 flex flex-col items-center justify-center py-6 text-center animate-in zoom-in-95">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="h-10 w-10" />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              {/* Share Slider */}
-              <div className="rounded-xl border border-border bg-muted/20 p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-foreground">Tanlangan ulush miqdori:</span>
-                  <span className="text-base font-bold text-accent">{sharePercent}%</span>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={50}
-                  step={1}
-                  value={sharePercent}
-                  onChange={(e) => setSharePercent(Number(e.target.value))}
-                  className="w-full h-2 rounded-lg accent-accent bg-muted cursor-pointer"
-                />
+            <h4 className="text-xl font-bold text-foreground">Ulush Arizi Qabul Qilindi!</h4>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Investitsiya menejeri 15 daqiqa ichida siz bilan bog'lanadi.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div className="rounded-xl border border-border/80 bg-accent/30 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Sotib Olinadigan Ulush Foizi:</span>
+                <span className="text-sm font-bold text-purple-600 dark:text-purple-400">{sharePercent}%</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={50}
+                value={sharePercent}
+                onChange={(e) => setSharePercent(Number(e.target.value))}
+                className="w-full h-2 rounded-lg bg-accent accent-purple-500 cursor-pointer"
+              />
 
-                <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
-                  <div>
-                    <span className="text-[11px] text-muted-foreground">Ulush qiymati:</span>
-                    <p className="text-sm font-bold text-primary">{formatPrice(sharePriceUzxs)}</p>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-muted-foreground">Oylik dividend:</span>
-                    <p className="text-sm font-bold text-accent">+{formatPrice(monthlyDividendUzxs)} /oy</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-xs">
+                <div>
+                  <span className="text-muted-foreground block">Ulush Qiymati:</span>
+                  <span className="font-bold text-foreground text-sm">{shareCost.toLocaleString()} so'm</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">Taxminiy Oylik Dividend:</span>
+                  <span className="font-bold text-emerald-500 text-sm">{monthlyDividend.toLocaleString()} so'm</span>
                 </div>
               </div>
+            </div>
 
-              {/* Form Inputs */}
-              <div className="flex flex-col gap-3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-foreground">Ism va Familiya</span>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Alisher Navoiy"
-                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
-                  />
-                </label>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Investor Ismi va Familiyasi</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Masalan: Bekzodbek Sadullayev"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-foreground">Telefon raqami</span>
-                    <input
-                      type="tel"
-                      required
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+998 90 123 45 67"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
-                    />
-                  </label>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Telefon Raqami</label>
+              <input
+                type="tel"
+                required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+998 90 123 45 67"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
 
-                  <label className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold text-foreground">E-pochta</span>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="investor@example.uz"
-                      className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
-                    />
-                  </label>
-                </div>
+            <div className="flex items-center gap-2 rounded-xl bg-purple-500/10 p-3 text-xs text-purple-600 dark:text-purple-300">
+              <ShieldCheck className="h-5 w-5 shrink-0" />
+              <span>Smart-contract kafolati va avtomatik oylik dividend to'lovi.</span>
+            </div>
 
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-foreground">To&apos;lov usuli</span>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    {[
-                      { id: 'bank', label: 'Bank o\'tkazmasi' },
-                      { id: 'card', label: 'Uzcard / Humo' },
-                      { id: 'crypto', label: 'USDT / Crypto' },
-                    ].map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setPaymentMethod(m.id as any)}
-                        className={`rounded-lg border p-2 text-center font-medium transition-colors ${
-                          paymentMethod === m.id
-                            ? 'border-accent bg-accent/10 text-accent font-bold'
-                            : 'border-border bg-background text-muted-foreground hover:bg-muted'
-                        }`}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 rounded-lg bg-muted p-2.5 text-[11px] text-muted-foreground">
-                <ShieldCheck className="size-4 text-accent shrink-0" aria-hidden="true" />
-                <span>Barcha ulushlar Davlat kadastri va smart-kontrakt orqali rasmiylashtiriladi.</span>
-              </div>
-
+            <div className="mt-6 flex justify-end gap-3 border-t border-border/60 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border border-input px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent"
+              >
+                Bekor qilish
+              </button>
               <button
                 type="submit"
-                className="w-full rounded-xl bg-accent py-2.5 text-xs font-bold text-accent-foreground shadow-md hover:opacity-90 transition-opacity"
+                className="rounded-xl bg-purple-600 px-5 py-2 text-xs font-semibold text-white shadow hover:bg-purple-700"
               >
-                {sharePercent}% Ulush Sotib Olish Arizasini Yuborish ({formatPrice(sharePriceUzxs)})
+                Ulush Sotib Olish Arizasi
               </button>
-            </form>
-          )}
-        </div>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )

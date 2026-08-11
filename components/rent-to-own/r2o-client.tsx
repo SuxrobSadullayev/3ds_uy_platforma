@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { CheckCircle2, Circle, Home, Lock, Wallet } from 'lucide-react'
 import { PropertyCard } from '@/components/property-card'
+import { R2oCalculator } from '@/components/rent-to-own/r2o-calculator'
+import { R2oAgreementModal } from '@/components/rent-to-own/r2o-agreement-modal'
 import { formatPrice, properties } from '@/lib/data/properties'
 
 // Demo R2O shartnoma: Qibray hovli uy (p-002)
@@ -16,6 +19,7 @@ const CONTRACT = {
 }
 
 export function R2oClient() {
+  const [isAgreementOpen, setIsAgreementOpen] = useState(false)
   const r2oProperties = properties.filter((p) => p.rentToOwn)
   const paid = CONTRACT.monthlyPayment * CONTRACT.paidMonths
   const remaining = CONTRACT.lockedPrice - paid
@@ -78,6 +82,9 @@ export function R2oClient() {
         })}
       </section>
 
+      {/* R2O Interactive Schedule & Equity Calculator */}
+      <R2oCalculator onOpenAgreement={() => setIsAgreementOpen(true)} />
+
       <section
         aria-labelledby="contract-heading"
         className="rounded-xl border border-border bg-card p-5 md:p-6"
@@ -86,10 +93,14 @@ export function R2oClient() {
           <h2 id="contract-heading" className="text-sm font-semibold text-card-foreground">
             Demo shartnoma — {CONTRACT.propertyTitle}
           </h2>
-          <span className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-medium text-accent">
+          <button
+            type="button"
+            onClick={() => setIsAgreementOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-xs font-bold text-accent hover:opacity-90 transition-opacity"
+          >
             <Lock className="size-3" aria-hidden="true" />
-            Narx qulflangan: {formatPrice(CONTRACT.lockedPrice)}
-          </span>
+            Narx qulflangan: {formatPrice(CONTRACT.lockedPrice)} (E-Imzo)
+          </button>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.2fr]">
@@ -192,6 +203,12 @@ export function R2oClient() {
           ))}
         </div>
       </section>
+
+      {/* R2O Digital E-Imzo Agreement Modal */}
+      <R2oAgreementModal
+        isOpen={isAgreementOpen}
+        onClose={() => setIsAgreementOpen(false)}
+      />
     </div>
   )
 }

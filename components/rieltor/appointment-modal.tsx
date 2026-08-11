@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Bell, Calendar as CalendarIcon, CheckCircle2, Clock, Mail, Phone, User, X } from 'lucide-react'
 import { properties } from '@/lib/data/properties'
 
@@ -25,12 +25,16 @@ export function AppointmentModal({
   const [isSuccess, setIsSuccess] = useState(false)
 
   useEffect(() => {
-    if (initialClientName) setClientName(initialClientName)
+    if (initialClientName) {
+      setClientName(initialClientName)
+    }
   }, [initialClientName])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) onClose()
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -38,166 +42,160 @@ export function AppointmentModal({
 
   if (!isOpen) return null
 
-  function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsSuccess(true)
     setTimeout(() => {
       setIsSuccess(false)
       onClose()
-    }, 1800)
+    }, 1500)
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="appointment-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <CalendarIcon className="size-5" aria-hidden="true" />
-            </div>
-            <div>
-              <h2 id="appointment-title" className="text-base font-bold text-card-foreground">
-                Demo Ko&apos;rsatuv Uchrashuvini Belgilash
-              </h2>
-              <p className="text-xs text-muted-foreground">Mulkni mijozga joyida ko&apos;rsatish grafigi</p>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/80 bg-background p-6 shadow-2xl">
+        <button
+          onClick={onClose}
+          type="button"
+          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Yopish"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="flex items-center gap-3 border-b border-border/60 pb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <CalendarIcon className="h-5 w-5" />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label="Yopish"
-          >
-            <X className="size-4" aria-hidden="true" />
-          </button>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Uchrashuv Belgilash</h3>
+            <p className="text-xs text-muted-foreground">Mijoz bilan mulk namoyishini rejalashtiring</p>
+          </div>
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto p-6">
-          {isSuccess ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center animate-in zoom-in-95">
-              <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <CheckCircle2 className="size-8" aria-hidden="true" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground">
-                Uchrashuv muvaffaqiyatli belgilandi!
-              </h3>
-              <p className="max-w-xs text-xs text-muted-foreground">
-                Sana: {date} soat {time} da. SMS va Email xabarnomalar mijozga yuborildi.
-              </p>
+        {isSuccess ? (
+          <div className="my-8 flex flex-col items-center justify-center py-6 text-center animate-in zoom-in-95">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="h-10 w-10" />
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-foreground">Mijoz Ismi va Familiyasi</span>
+            <h4 className="text-xl font-bold text-foreground">Uchrashuv Belgilandi!</h4>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Mijozga SMS va Email taklifnoma yuborildi.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Mijoz Ismi va Familiyasi</label>
+              <div className="relative">
+                <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   required
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Javohir Ergashev"
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
+                  placeholder="Masalan: Sardor Rahimov"
+                  className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-              </label>
+              </div>
+            </div>
 
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-foreground">Telefon Raqami</span>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Telefon Raqami</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <input
                   type="tel"
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+998 90 123 45 67"
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring outline-none"
+                  className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
-              </label>
+              </div>
+            </div>
 
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold text-foreground">Ko&apos;rsatiladigan Mulk</span>
-                <select
-                  value={propertyId}
-                  onChange={(e) => setPropertyId(e.target.value)}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                >
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-foreground">Koʻrsatiladigan Mulk</label>
+              <select
+                value={propertyId}
+                onChange={(e) => setPropertyId(e.target.value)}
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title} — {p.district}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-foreground">Sana</span>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                  />
-                </label>
-
-                <label className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-foreground">Vaql (Soat)</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-foreground">Sana</label>
+                <input
+                  type="date"
+                  required
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-foreground">Vaqt</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <input
                     type="time"
                     required
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
-                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                    className="w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                </label>
+                </div>
               </div>
+            </div>
 
-              {/* Notification Toggles */}
-              <div className="rounded-xl border border-border bg-muted/20 p-3 flex flex-col gap-2">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Bell className="size-3.5 text-primary" aria-hidden="true" />
-                    Mijozga SMS eslatma yuborish (1 soat oldin)
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={sendSms}
-                    onChange={(e) => setSendSms(e.target.checked)}
-                    className="size-4 accent-primary"
-                  />
-                </label>
+            <div className="rounded-xl bg-accent/40 p-3 space-y-2">
+              <label className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendSms}
+                  onChange={(e) => setSendSms(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary"
+                />
+                <Bell className="h-3.5 w-3.5 text-primary" />
+                Mijozga avtomatik SMS eslatma yuborish
+              </label>
+              <label className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary"
+                />
+                <Mail className="h-3.5 w-3.5 text-primary" />
+                Google Calendar / Email taklifnoma yuborish
+              </label>
+            </div>
 
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Mail className="size-3.5 text-accent" aria-hidden="true" />
-                    Google Calendar / Email taklifnoma
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={sendEmail}
-                    onChange={(e) => setSendEmail(e.target.checked)}
-                    className="size-4 accent-primary"
-                  />
-                </label>
-              </div>
-
+            <div className="mt-6 flex justify-end gap-3 border-t border-border/60 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border border-input px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent"
+              >
+                Bekor qilish
+              </button>
               <button
                 type="submit"
-                className="w-full rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity"
+                className="rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
               >
-                Uchrashuvni Kalendarga Qo&apos;shish
+                Uchrashuvni Tasdiqlash
               </button>
-            </form>
-          )}
-        </div>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )

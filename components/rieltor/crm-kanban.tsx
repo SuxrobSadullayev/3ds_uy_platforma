@@ -1,228 +1,148 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  Building2,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  DollarSign,
-  Plus,
-  Phone,
-  Search,
-  User,
-} from 'lucide-react'
-import { formatPrice } from '@/lib/data/properties'
+import React, { useState } from 'react'
+import { Calendar, ChevronRight, MessageSquare, Phone, Plus, User } from 'lucide-react'
 
-export type LeadStatus =
-  | 'yangi'
-  | 'muloqotda'
-  | 'demo'
-  | 'bitim'
-  | 'yopildi'
-
-export interface LeadItem {
+export interface DealItem {
   id: string
   clientName: string
   phone: string
   propertyTitle: string
-  amountUzxs: number
-  status: LeadStatus
-  updatedAt: string
+  amount: string
+  stage: 'yangi' | 'muloqot' | 'demo' | 'bitim' | 'yopildi'
+  date: string
 }
 
-const COLUMNS: { id: LeadStatus; label: string; color: string }[] = [
-  { id: 'yangi', label: "Yangi So'rov", color: 'border-blue-500/40 bg-blue-500/5 text-blue-600' },
-  { id: 'muloqotda', label: 'Muloqotda', color: 'border-yellow-500/40 bg-yellow-500/5 text-yellow-600' },
-  { id: 'demo', label: "Demo Ko'rsatish", color: 'border-purple-500/40 bg-purple-500/5 text-purple-600' },
-  { id: 'bitim', label: 'Bitim Jarayonida', color: 'border-orange-500/40 bg-orange-500/5 text-orange-600' },
-  { id: 'yopildi', label: 'Muvaffaqiyatli Yopildi', color: 'border-emerald-500/40 bg-emerald-500/5 text-emerald-600' },
+const INITIAL_DEALS: DealItem[] = [
+  { id: '1', clientName: 'Jasur Bekov', phone: '+998 90 111 22 33', propertyTitle: 'Chilonzor 3 xonali', amount: '850,000,000 soʻm', stage: 'yangi', date: 'Bugun' },
+  { id: '2', clientName: 'Malika Aliyeve', phone: '+998 93 444 55 66', propertyTitle: 'Yashnobod Yangi Uy', amount: '1,200,000,000 soʻm', stage: 'muloqot', date: 'Kecha' },
+  { id: '3', clientName: 'Sardor Qodirov', phone: '+998 97 777 88 99', propertyTitle: 'Mirzo Ulugbek Penthouse', amount: '2,100,000,000 soʻm', stage: 'demo', date: '10-Avg' },
+  { id: '4', clientName: 'Nodira Azimova', phone: '+998 94 222 33 44', propertyTitle: 'Yakkasaroy Ofis', amount: '950,000,000 soʻm', stage: 'bitim', date: '08-Avg' },
+  { id: '5', clientName: 'Temur Isoev', phone: '+998 91 555 66 77', propertyTitle: 'Sergeli Kvartira', amount: '620,000,000 soʻm', stage: 'yopildi', date: '01-Avg' },
 ]
 
-const INITIAL_LEADS: LeadItem[] = [
-  {
-    id: 'lead-1',
-    clientName: 'Javohir Ergashev',
-    phone: '+998 90 987 65 43',
-    propertyTitle: "Mirzo Ulug'bek 3 xonali kvartira",
-    amountUzxs: 1_150_000_000,
-    status: 'yangi',
-    updatedAt: 'Bugun 10:30',
-  },
-  {
-    id: 'lead-2',
-    clientName: 'Nigora Malikova',
-    phone: '+998 93 123 11 22',
-    propertyTitle: 'Qibray 2 qavatli hovli uy',
-    amountUzxs: 2_800_000_000,
-    status: 'muloqotda',
-    updatedAt: 'Kecha 16:45',
-  },
-  {
-    id: 'lead-3',
-    clientName: 'Sardor Rahimxon',
-    phone: '+998 97 555 44 33',
-    propertyTitle: 'Tashkent City A-klass ofis',
-    amountUzxs: 45_000_000,
-    status: 'demo',
-    updatedAt: 'Bugun 14:00',
-  },
-  {
-    id: 'lead-4',
-    clientName: 'Farrux Zokirov',
-    phone: '+998 99 888 77 66',
-    propertyTitle: 'Sergeli turar joy majmuasi',
-    amountUzxs: 780_000_000,
-    status: 'bitim',
-    updatedAt: '2 kun oldin',
-  },
-  {
-    id: 'lead-5',
-    clientName: 'Shahnoza Umarova',
-    phone: '+998 91 222 33 44',
-    propertyTitle: 'Yunusobod Penthaus',
-    amountUzxs: 4_500_000_000,
-    status: 'yopildi',
-    updatedAt: '3 kun oldin',
-  },
+const STAGES = [
+  { id: 'yangi', name: 'Yangi Soʻrov', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+  { id: 'muloqot', name: 'Muloqotda', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+  { id: 'demo', name: 'Demo Koʻrsatish', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+  { id: 'bitim', name: 'Bitim Jarayonida', color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
+  { id: 'yopildi', name: 'Muvaffaqiyatli Yopildi', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
 ]
 
-export function CrmKanban({ onOpenAppointment }: { onOpenAppointment?: (lead?: LeadItem) => void }) {
-  const [leads, setLeads] = useState<LeadItem[]>(INITIAL_LEADS)
-  const [search, setSearch] = useState('')
+interface CrmKanbanProps {
+  onOpenAppointmentModal: (clientName?: string) => void
+}
 
-  const filtered = leads.filter(
-    (l) =>
-      l.clientName.toLowerCase().includes(search.toLowerCase()) ||
-      l.propertyTitle.toLowerCase().includes(search.toLowerCase()) ||
-      l.phone.includes(search),
-  )
+export function CrmKanban({ onOpenAppointmentModal }: CrmKanbanProps) {
+  const [deals, setDeals] = useState<DealItem[]>(INITIAL_DEALS)
 
-  function moveLead(id: string, direction: 'prev' | 'next') {
-    const order: LeadStatus[] = ['yangi', 'muloqotda', 'demo', 'bitim', 'yopildi']
-    setLeads((prev) =>
-      prev.map((lead) => {
-        if (lead.id !== id) return lead
-        const currentIndex = order.indexOf(lead.status)
+  const moveDeal = (id: string, direction: 'next' | 'prev') => {
+    const stageKeys = STAGES.map((s) => s.id)
+    setDeals((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item
+        const currentIndex = stageKeys.indexOf(item.stage)
         const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1
-        if (nextIndex >= 0 && nextIndex < order.length) {
-          return { ...lead, status: order[nextIndex] }
+        if (nextIndex >= 0 && nextIndex < stageKeys.length) {
+          return { ...item, stage: stageKeys[nextIndex] as DealItem['stage'] }
         }
-        return lead
-      }),
+        return item
+      })
     )
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Mijoz ismi yoki mulk bo'yicha qidirish..."
-            className="w-full rounded-xl border border-border bg-card py-2 pl-9 pr-3 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+    <div className="w-full space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Mijozlar Kanban Taxtasi</h2>
+          <p className="text-xs text-muted-foreground">Mijozlar bilan savdo quvurini (Sales Pipeline) boshqaring</p>
         </div>
-
-        {onOpenAppointment && (
-          <button
-            type="button"
-            onClick={() => onOpenAppointment()}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            <span>Uchrashuv belgilash</span>
-          </button>
-        )}
+        <button
+          onClick={() => onOpenAppointmentModal()}
+          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          Yangi Uchrashuv
+        </button>
       </div>
 
-      {/* Kanban Board Columns */}
-      <div className="overflow-x-auto pb-4">
-        <div className="flex min-w-[1100px] gap-4">
-          {COLUMNS.map((col) => {
-            const colLeads = filtered.filter((l) => l.status === col.id)
-            return (
-              <div
-                key={col.id}
-                className="flex flex-1 flex-col rounded-2xl border border-border bg-muted/20 p-3"
-              >
-                {/* Column Title */}
-                <div className={`flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold ${col.color}`}>
-                  <span>{col.label}</span>
-                  <span className="flex size-5 items-center justify-center rounded-full bg-background text-[11px]">
-                    {colLeads.length}
-                  </span>
-                </div>
-
-                {/* Cards Container */}
-                <div className="mt-3 flex flex-1 flex-col gap-3">
-                  {colLeads.map((lead) => (
-                    <div
-                      key={lead.id}
-                      className="group flex flex-col justify-between gap-2.5 rounded-xl border border-border bg-card p-3.5 shadow-sm transition-all hover:shadow-md"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-card-foreground flex items-center gap-1">
-                            <User className="size-3.5 text-primary" aria-hidden="true" />
-                            {lead.clientName}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">{lead.updatedAt}</span>
-                        </div>
-
-                        <p className="mt-1 text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                          <Phone className="size-3" aria-hidden="true" />
-                          {lead.phone}
-                        </p>
-
-                        <p className="mt-2 text-xs font-medium text-foreground line-clamp-1 flex items-center gap-1">
-                          <Building2 className="size-3 text-muted-foreground shrink-0" aria-hidden="true" />
-                          {lead.propertyTitle}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-border pt-2 text-xs">
-                        <span className="font-bold text-primary">{formatPrice(lead.amountUzxs)}</span>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => moveLead(lead.id, 'prev')}
-                            disabled={col.id === 'yangi'}
-                            className="flex size-6 items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
-                            title="Oldingi bosqich"
-                          >
-                            <ChevronLeft className="size-3.5" aria-hidden="true" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveLead(lead.id, 'next')}
-                            disabled={col.id === 'yopildi'}
-                            className="flex size-6 items-center justify-center rounded border border-border text-muted-foreground hover:bg-muted disabled:opacity-30 transition-colors"
-                            title="Keyingi bosqich"
-                          >
-                            <ChevronRight className="size-3.5" aria-hidden="true" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {colLeads.length === 0 && (
-                    <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border py-8 text-center text-xs text-muted-foreground">
-                      Mijozlar yo&apos;q
-                    </div>
-                  )}
-                </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5 overflow-x-auto pb-2">
+        {STAGES.map((stage) => {
+          const stageDeals = deals.filter((d) => d.stage === stage.id)
+          return (
+            <div
+              key={stage.id}
+              className="flex flex-col rounded-2xl border border-border/60 bg-accent/20 p-3 min-w-[240px]"
+            >
+              <div className="mb-3 flex items-center justify-between px-1">
+                <span className={`rounded-lg border px-2.5 py-1 text-xs font-bold ${stage.color}`}>
+                  {stage.name}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">{stageDeals.length}</span>
               </div>
-            )
-          })}
-        </div>
+
+              <div className="flex-1 space-y-3">
+                {stageDeals.map((deal) => (
+                  <div
+                    key={deal.id}
+                    className="rounded-xl border border-border/80 bg-background p-3 shadow-sm hover:shadow-md transition-all space-y-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
+                        <User className="h-4 w-4 text-primary" />
+                        {deal.clientName}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{deal.date}</span>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground truncate">{deal.propertyTitle}</p>
+                    <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{deal.amount}</p>
+
+                    <div className="flex items-center justify-between border-t border-border/50 pt-2 text-[11px]">
+                      <a href={`tel:${deal.phone}`} className="flex items-center gap-1 text-muted-foreground hover:text-primary">
+                        <Phone className="h-3 w-3" />
+                        {deal.phone}
+                      </a>
+                      <button
+                        onClick={() => onOpenAppointmentModal(deal.clientName)}
+                        className="flex items-center gap-1 text-primary hover:underline font-medium"
+                      >
+                        <Calendar className="h-3 w-3" />
+                        Demo
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between gap-1 pt-1">
+                      {stage.id !== 'yangi' && (
+                        <button
+                          onClick={() => moveDeal(deal.id, 'prev')}
+                          className="w-full rounded-lg border border-input py-1 text-[10px] text-muted-foreground hover:bg-accent"
+                        >
+                          ◀ Orqaga
+                        </button>
+                      )}
+                      {stage.id !== 'yopildi' && (
+                        <button
+                          onClick={() => moveDeal(deal.id, 'next')}
+                          className="w-full rounded-lg border border-primary/30 bg-primary/5 py-1 text-[10px] font-medium text-primary hover:bg-primary/10"
+                        >
+                          Oldinga ▶
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {stageDeals.length === 0 && (
+                  <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-border/60 text-xs text-muted-foreground">
+                    Eʼlon yoʻq
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

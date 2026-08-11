@@ -1,30 +1,11 @@
 'use client'
 
-import { Component, type ReactNode, Suspense, useMemo, useRef, useState } from 'react'
+import { Suspense, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { ContactShadows, Environment, Html, OrbitControls, useGLTF } from '@react-three/drei'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import {
-  Box,
-  Eye,
-  Info,
-  Layers,
-  Maximize2,
-  Minimize2,
-  RotateCcw,
-  Sparkles,
-  Sun,
-} from 'lucide-react'
+import { ContactShadows, Environment, Html, OrbitControls } from '@react-three/drei'
 import type { Property } from '@/lib/data/properties'
 
-export type EnvironmentPreset = 'apartment' | 'city' | 'sunset' | 'studio'
-
-interface Property3DViewerProps {
-  property: Property
-  modelUrl?: string
-}
-
-interface RoomAnnotation {
+interface Room {
   name: string
   size: string
   x: number
@@ -34,46 +15,13 @@ interface RoomAnnotation {
   color: string
 }
 
-// Simple ErrorBoundary for Canvas/GLTF loading
-class WebGLErrorBoundary extends Component<
-  { children: ReactNode; fallback: ReactNode },
-  { hasError: boolean }
-> {
-  constructor(props: { children: ReactNode; fallback: ReactNode }) {
-    super(props)
-    this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
-
-  componentDidCatch(error: Error) {
-    console.warn('3D Model rendering fallback triggered:', error)
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback
-    }
-    return this.props.children
-  }
-}
-
 /**
- * Loads a real .glb / .gltf model dynamically if modelUrl is provided.
+ * Demo 3D kvartira modeli — real .glb model yuklanmaguncha
+ * mulk parametrlari asosida protsedural xona rejasi chiziladi.
  */
-function GLTFModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url)
-  return <primitive object={scene} scale={1.5} position={[0, 0, 0]} />
-}
-
-/**
- * Procedural 3D apartment model fallback.
- */
-function buildRooms(property: Property): RoomAnnotation[] {
+function buildRooms(property: Property): Room[] {
   const count = Math.min(property.rooms, 4)
-  const base: RoomAnnotation[] = [
+  const base: Room[] = [
     { name: 'Mehmonxona', size: '24 m²', x: -1.6, z: -1.2, w: 3, d: 2.4, color: '#dbe7f0' },
     { name: 'Yotoqxona', size: '18 m²', x: 1.8, z: -1.2, w: 2.6, d: 2.4, color: '#e4ede6' },
     { name: 'Oshxona', size: '14 m²', x: -1.8, z: 1.5, w: 2.6, d: 2.2, color: '#f0e9dc' },
@@ -82,7 +30,7 @@ function buildRooms(property: Property): RoomAnnotation[] {
   return base.slice(0, Math.max(count, 2))
 }
 
-function ProceduralApartmentModel({ property }: { property: Property }) {
+function ApartmentModel({ property }: { property: Property }) {
   const rooms = useMemo(() => buildRooms(property), [property])
 
   return (
@@ -90,7 +38,7 @@ function ProceduralApartmentModel({ property }: { property: Property }) {
       {/* Pol */}
       <mesh receiveShadow position={[0, -0.05, 0]}>
         <boxGeometry args={[7.4, 0.1, 5.4]} />
-        <meshStandardMaterial color="#c9bda8" roughness={0.4} />
+        <meshStandardMaterial color="#c9bda8" />
       </mesh>
 
       {/* Tashqi devorlar */}
@@ -102,7 +50,7 @@ function ProceduralApartmentModel({ property }: { property: Property }) {
       ].map((wall, i) => (
         <mesh key={i} castShadow position={[...wall.pos]}>
           <boxGeometry args={[...wall.size]} />
-          <meshStandardMaterial color="#f5f2ec" roughness={0.7} />
+          <meshStandardMaterial color="#f5f2ec" />
         </mesh>
       ))}
 
@@ -116,20 +64,22 @@ function ProceduralApartmentModel({ property }: { property: Property }) {
         <meshStandardMaterial color="#efece5" />
       </mesh>
 
-      {/* Xonalar (pol qoplamasi + Html 3D Annotatsiyalar) */}
+      {/* Xonalar (pol qoplamasi + annotatsiya) */}
       {rooms.map((room) => (
         <group key={room.name}>
           <mesh position={[room.x, 0.02, room.z]}>
             <boxGeometry args={[room.w, 0.04, room.d]} />
-            <meshStandardMaterial color={room.color} roughness={0.3} />
+            <meshStandardMaterial color={room.color} />
           </mesh>
-          <Html position={[room.x, 0.8, room.z]} center distanceFactor={10} occlude={false}>
-            <div className="pointer-events-none flex items-center gap-1.5 rounded-full border border-border/80 bg-background/90 px-2.5 py-1 shadow-md backdrop-blur-sm">
-              <span className="size-2 rounded-full bg-primary" />
-              <div className="text-left text-[11px] leading-tight text-foreground whitespace-nowrap">
-                <span className="font-semibold">{room.name}</span>
-                <span className="ml-1 text-muted-foreground">({room.size})</span>
-              </div>
+          <Html
+            position={[room.x, 0.7, room.z]}
+            center
+            distanceFactor={9}
+            occlude={false}
+          >
+            <div className="pointer-events-none rounded-md bg-foreground/85 px-2 py-1 text-center text-[10px] leading-tight text-background whitespace-nowrap">
+              <div className="font-semibold">{room.name}</div>
+              <div>{room.size}</div>
             </div>
           </Html>
         </group>
@@ -152,167 +102,32 @@ function ProceduralApartmentModel({ property }: { property: Property }) {
   )
 }
 
-function LoaderFallback() {
+export function Property3DViewer({ property }: { property: Property }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/30 text-muted-foreground">
-      <Sparkles className="size-6 animate-pulse text-primary" aria-hidden="true" />
-      <span className="text-xs font-medium">3D Canvas yuklanmoqda...</span>
-    </div>
-  )
-}
-
-export function Property3DViewer({ property, modelUrl }: Property3DViewerProps) {
-  const controlsRef = useRef<OrbitControlsImpl>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [envPreset, setEnvPreset] = useState<EnvironmentPreset>('apartment')
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [viewMode, setViewMode] = useState<'3d' | 'top'>('3d')
-
-  function resetCamera() {
-    if (!controlsRef.current) return
-    controlsRef.current.reset()
-    setViewMode('3d')
-  }
-
-  function toggleTopDownView() {
-    if (!controlsRef.current) return
-    if (viewMode === '3d') {
-      controlsRef.current.object.position.set(0, 11, 0.01)
-      controlsRef.current.target.set(0, 0, 0)
-      controlsRef.current.update()
-      setViewMode('top')
-    } else {
-      resetCamera()
-    }
-  }
-
-  function toggleFullscreen() {
-    if (!containerRef.current) return
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {})
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {})
-    }
-  }
-
-  const presets: { id: EnvironmentPreset; label: string }[] = [
-    { id: 'apartment', label: 'Xonadon' },
-    { id: 'city', label: 'Shahar' },
-    { id: 'sunset', label: 'Quyosh' },
-    { id: 'studio', label: 'Studiya' },
-  ]
-
-  return (
-    <div
-      ref={containerRef}
-      className={`relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/20 to-muted/60 ${
-        isFullscreen ? 'fixed inset-0 z-50 rounded-none bg-background' : 'rounded-xl'
-      }`}
-      aria-label="3D kvartira interaktiv modeli"
-    >
+    <div className="relative h-full w-full" aria-label="3D kvartira modeli">
       <Canvas shadows camera={{ position: [7, 6, 7], fov: 42 }}>
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={0.6} />
         <directionalLight
           position={[6, 10, 4]}
-          intensity={1.2}
+          intensity={1.1}
           castShadow
           shadow-mapSize={[1024, 1024]}
         />
         <Suspense fallback={null}>
-          <WebGLErrorBoundary fallback={<ProceduralApartmentModel property={property} />}>
-            {modelUrl ? (
-              <GLTFModel url={modelUrl} />
-            ) : (
-              <ProceduralApartmentModel property={property} />
-            )}
-          </WebGLErrorBoundary>
+          <ApartmentModel property={property} />
           <ContactShadows position={[0, -0.11, 0]} opacity={0.35} blur={2.2} scale={14} />
-          <Environment preset={envPreset} />
+          <Environment preset="apartment" />
         </Suspense>
         <OrbitControls
-          ref={controlsRef}
-          enablePan={true}
-          minDistance={3}
-          maxDistance={18}
-          maxPolarAngle={viewMode === 'top' ? Math.PI / 2 : Math.PI / 2.1}
+          enablePan={false}
+          minDistance={5}
+          maxDistance={16}
+          maxPolarAngle={Math.PI / 2.15}
         />
       </Canvas>
-
-      {/* Yuqori boshqaruv paneli (Glassmorphism) */}
-      <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border/60 bg-background/80 p-1 shadow-sm backdrop-blur-md">
-          <span className="flex items-center gap-1 px-2 text-xs font-semibold text-foreground">
-            <Box className="size-3.5 text-primary" aria-hidden="true" />
-            3D Viewer
-          </span>
-          <span className="h-4 w-px bg-border" aria-hidden="true" />
-          <button
-            type="button"
-            onClick={resetCamera}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title="Kamerani asl holatiga qaytarish"
-            aria-label="Kamerani qaytarish"
-          >
-            <RotateCcw className="size-3.5" aria-hidden="true" />
-            <span>Reset</span>
-          </button>
-          <button
-            type="button"
-            onClick={toggleTopDownView}
-            className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-              viewMode === 'top'
-                ? 'bg-primary text-primary-foreground font-semibold'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-            title="Tepadan ko'rish (Floor plan)"
-            aria-label="Tepadan ko'rish"
-          >
-            <Layers className="size-3.5" aria-hidden="true" />
-            <span>Tepadan</span>
-          </button>
-        </div>
-
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          {/* Yoritish muhiti */}
-          <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-background/80 p-1 shadow-sm backdrop-blur-md">
-            <Sun className="size-3.5 ml-1 text-muted-foreground" aria-hidden="true" />
-            {presets.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setEnvPreset(p.id)}
-                className={`rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
-                  envPreset === p.id
-                    ? 'bg-primary text-primary-foreground font-semibold'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="pointer-events-auto flex size-8 items-center justify-center rounded-lg border border-border/60 bg-background/80 text-muted-foreground shadow-sm backdrop-blur-md hover:bg-muted hover:text-foreground transition-colors"
-            title="To'liq ekranda ko'rish"
-            aria-label="To'liq ekran"
-          >
-            {isFullscreen ? (
-              <Minimize2 className="size-4" aria-hidden="true" />
-            ) : (
-              <Maximize2 className="size-4" aria-hidden="true" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Pastki yordamchi matn */}
-      <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border/60 bg-background/85 px-3 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur-md">
-        <Info className="size-3.5 text-primary" aria-hidden="true" />
-        <span>Sichqoncha bilan 360° aylantiring va zoom qiling</span>
-      </div>
+      <p className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-foreground/70 px-3 py-1 text-xs text-background">
+        Aylantirish uchun sudrang, zoom uchun scroll
+      </p>
     </div>
   )
 }

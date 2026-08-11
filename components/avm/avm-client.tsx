@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Calculator, MapPin, Sparkles, TrendingDown, TrendingUp } from 'lucide-react'
+import { Calculator, MapPin, Sparkles, TrendingDown, TrendingUp, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { AiMatchModal } from '@/components/avm/ai-match-modal'
 import { estimatePrice, type AvmResult } from '@/lib/avm'
 import {
   formatPrice,
@@ -27,6 +28,7 @@ export function AvmClient() {
   const [hasRenovation, setHasRenovation] = useState(true)
   const [nearMetro, setNearMetro] = useState(false)
   const [result, setResult] = useState<AvmResult | null>(null)
+  const [isAiMatchOpen, setIsAiMatchOpen] = useState(false)
 
   const comparables = useMemo(() => {
     if (!result) return []
@@ -62,7 +64,7 @@ export function AvmClient() {
     <div className="grid gap-6 lg:grid-cols-5">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 lg:col-span-2"
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 lg:col-span-2 shadow-sm"
       >
         <div className="flex items-center gap-2 text-foreground">
           <Calculator className="size-5 text-primary" aria-hidden="true" />
@@ -181,7 +183,7 @@ export function AvmClient() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 text-sm text-foreground">
+          <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={hasRenovation}
@@ -190,7 +192,7 @@ export function AvmClient() {
             />
             {"Yevro ta'mir qilingan"}
           </label>
-          <label className="flex items-center gap-2 text-sm text-foreground">
+          <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
             <input
               type="checkbox"
               checked={nearMetro}
@@ -201,45 +203,63 @@ export function AvmClient() {
           </label>
         </div>
 
-        <Button type="submit" className="mt-1">
+        <Button type="submit" className="mt-1 font-bold">
           <Sparkles className="size-4" aria-hidden="true" />
-          Narxni baholash
+          Sun&apos;iy Intellekt Narxini Baholash
         </Button>
       </form>
 
       <div className="flex flex-col gap-4 lg:col-span-3">
         {result ? (
           <>
-            <div className="rounded-xl border border-border bg-card p-6">
-              <p className="text-sm text-muted-foreground">Taxminiy bozor qiymati</p>
-              <p className="mt-1 text-3xl font-bold tracking-tight text-primary md:text-4xl">
-                {formatPrice(result.estimatedPrice)}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Taxminiy bozor qiymati (AI AVM)</p>
+                  <p className="mt-1 text-3xl font-bold tracking-tight text-primary md:text-4xl">
+                    {formatPrice(result.estimatedPrice)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAiMatchOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow hover:opacity-90 transition-opacity"
+                >
+                  <Sparkles className="size-4" aria-hidden="true" />
+                  <span>AI Match Mos Mulklar</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs text-muted-foreground border-t border-border pt-3">
                 <span className="flex items-center gap-1.5">
-                  <TrendingDown className="size-4" aria-hidden="true" />
-                  Quyi chegara: {formatPrice(result.lowPrice)}
+                  <TrendingDown className="size-4 text-muted-foreground" aria-hidden="true" />
+                  Quyi chegara: <span className="font-bold text-foreground">{formatPrice(result.lowPrice)}</span>
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <TrendingUp className="size-4" aria-hidden="true" />
-                  Yuqori chegara: {formatPrice(result.highPrice)}
+                  <TrendingUp className="size-4 text-accent" aria-hidden="true" />
+                  Yuqori chegara: <span className="font-bold text-accent">{formatPrice(result.highPrice)}</span>
                 </span>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                1 m² uchun: <span className="font-medium text-foreground">{formatPrice(result.pricePerM2)}</span>
+              <p className="text-xs text-muted-foreground">
+                1 m² uchun o&apos;rtacha: <span className="font-semibold text-foreground">{formatPrice(result.pricePerM2)}</span>
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="mb-3 font-semibold text-foreground">Narxga ta&apos;sir qilgan omillar</h3>
-              <ul className="flex flex-col gap-2">
+            {/* Visual Breakdown of Price Factors */}
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <h3 className="mb-3 font-semibold text-foreground text-sm">
+                Narxga ta&apos;sir qilgan omillar (Impact Breakdown)
+              </h3>
+              <ul className="flex flex-col gap-2.5">
                 {result.factors.map((f) => (
-                  <li key={f.label} className="flex items-center justify-between gap-4 text-sm">
-                    <span className="text-muted-foreground">{f.label}</span>
+                  <li key={f.label} className="flex items-center justify-between gap-4 text-xs">
+                    <span className="text-foreground font-medium">{f.label}</span>
                     <span
                       className={cn(
-                        'font-medium tabular-nums',
-                        f.impact >= 0 ? 'text-accent' : 'text-destructive',
+                        'font-bold tabular-nums px-2 py-0.5 rounded text-xs',
+                        f.impact >= 0
+                          ? 'bg-accent/10 text-accent'
+                          : 'bg-destructive/10 text-destructive',
                       )}
                     >
                       {f.impact >= 0 ? '+' : ''}
@@ -248,15 +268,14 @@ export function AvmClient() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                Bu baholash avtomatik model (AVM) natijasi bo&apos;lib, ±10% xato
-                chegarasiga ega. Rasmiy baholash uchun litsenziyalangan baholovchiga murojaat qiling.
+              <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
+                Bu baholash avtomatik model (AVM) va o&apos;xshash e&apos;lonlar statistikasi bo&apos;yicha hisoblangan.
               </p>
             </div>
 
             {comparables.length > 0 && (
-              <div className="rounded-xl border border-border bg-card p-6">
-                <h3 className="mb-3 font-semibold text-foreground">
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h3 className="mb-3 font-semibold text-foreground text-sm">
                   Shu hududdagi taqqoslanadigan mulklar
                 </h3>
                 <ul className="flex flex-col divide-y divide-border">
@@ -267,13 +286,13 @@ export function AvmClient() {
                         className="flex items-center justify-between gap-4 py-3 transition-colors hover:bg-muted/50"
                       >
                         <span className="flex min-w-0 flex-col">
-                          <span className="truncate text-sm font-medium text-foreground">{p.title}</span>
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <span className="truncate text-xs font-semibold text-foreground">{p.title}</span>
+                          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                             <MapPin className="size-3" aria-hidden="true" />
                             {p.district} · {p.area} m² · {p.rooms} xona
                           </span>
                         </span>
-                        <span className="shrink-0 text-sm font-semibold text-primary">
+                        <span className="shrink-0 text-xs font-bold text-primary">
                           {formatPrice(p.price)}
                         </span>
                       </Link>
@@ -288,13 +307,21 @@ export function AvmClient() {
             <span className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Calculator className="size-7" aria-hidden="true" />
             </span>
-            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Chapdagi formani to&apos;ldiring va &laquo;Narxni baholash&raquo; tugmasini
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+              Chapdagi formani to&apos;ldiring va &laquo;Sun&apos;iy Intellekt Narxini Baholash&raquo; tugmasini
               bosing — AI model mulkingiz qiymatini bir zumda hisoblab beradi.
             </p>
           </div>
         )}
       </div>
+
+      {/* AI Match Modal */}
+      <AiMatchModal
+        isOpen={isAiMatchOpen}
+        onClose={() => setIsAiMatchOpen(false)}
+        estimatedPrice={result?.estimatedPrice}
+        region={region}
+      />
     </div>
   )
 }

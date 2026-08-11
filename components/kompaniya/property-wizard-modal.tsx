@@ -1,651 +1,275 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import {
-  AlertCircle,
-  Box,
-  Building,
-  Camera,
-  Check,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-  FileText,
-  Image as ImageIcon,
-  Layers,
-  MapPin,
-  UploadCloud,
-  X,
-} from 'lucide-react'
-import {
-  PROPERTY_TYPE_LABELS,
-  REGIONS,
-  formatPrice,
-  type PropertyType,
-} from '@/lib/data/properties'
+import React, { useState } from 'react'
+import { Building2, Check, CheckCircle2, ChevronLeft, ChevronRight, FileCode, HardDrive, Image as ImageIcon, Layers, Upload, X } from 'lucide-react'
 
 export interface PropertyWizardModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit?: (data: WizardFormData) => void
 }
 
-export interface WizardFormData {
-  title: string
-  type: PropertyType
-  area: number
-  rooms: number
-  floor: number
-  totalFloors: number
-  region: string
-  district: string
-  address: string
-  price: number
-  pricePerM2: number
-  rentToOwn: boolean
-  monthlyPayment: number
-  minPeriodMonths: number
-  priceLockYear: number
-  mortgageOffer: boolean
-  virtualTourUrl: string
-  has3DModel: boolean
-  modelFileName?: string
-  images: string[]
-  description: string
-}
-
-const INITIAL_DATA: WizardFormData = {
-  title: '',
-  type: 'kvartira',
-  area: 75,
-  rooms: 2,
-  floor: 4,
-  totalFloors: 10,
-  region: 'Toshkent shahri',
-  district: 'Yunusobod tumani',
-  address: '',
-  price: 850_000_000,
-  pricePerM2: 11_333_333,
-  rentToOwn: false,
-  monthlyPayment: 12_500_000,
-  minPeriodMonths: 24,
-  priceLockYear: 2028,
-  mortgageOffer: true,
-  virtualTourUrl: '',
-  has3DModel: false,
-  modelFileName: '',
-  images: ['/images/property-1.png'],
-  description: '',
-}
-
-export function PropertyWizardModal({ isOpen, onClose, onSubmit }: PropertyWizardModalProps) {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
-  const [formData, setFormData] = useState<WizardFormData>(INITIAL_DATA)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+export function PropertyWizardModal({ isOpen, onClose }: PropertyWizardModalProps) {
+  const [step, setStep] = useState(1)
+  const [title, setTitle] = useState('')
+  const [type, setType] = useState('kvartira')
+  const [area, setArea] = useState('75')
+  const [rooms, setRooms] = useState('3')
+  const [price, setPrice] = useState('1200000000')
+  const [rentToOwn, setRentToOwn] = useState(false)
+  const [monthlyRent, setMonthlyRent] = useState('8000000')
   const [isSuccess, setIsSuccess] = useState(false)
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) onClose()
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
-  function updateField<K extends keyof WizardFormData>(key: K, value: WizardFormData[K]) {
-    setFormData((prev) => {
-      const updated = { ...prev, [key]: value }
-      if (key === 'price' || key === 'area') {
-        const p = key === 'price' ? (value as number) : prev.price
-        const a = key === 'area' ? (value as number) : prev.area
-        updated.pricePerM2 = a > 0 ? Math.round(p / a) : 0
-      }
-      return updated
-    })
-    if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: '' }))
-    }
-  }
+  const handleNext = () => setStep((s) => Math.min(s + 1, 4))
+  const handlePrev = () => setStep((s) => Math.max(s - 1, 1))
 
-  function validateStep(currentStep: number): boolean {
-    const errs: Record<string, string> = {}
-    if (currentStep === 1) {
-      if (!formData.title.trim()) errs.title = "Mulk sarlavhasini kiritish majburiy"
-      if (!formData.address.trim()) errs.address = "Manzilni kiritish majburiy"
-      if (formData.area <= 0) errs.area = "Maydon 0 dan katta bo'lishi kerak"
-    } else if (currentStep === 3) {
-      if (formData.price <= 0) errs.price = "Narx 0 dan katta bo'lishi kerak"
-    }
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  function nextStep() {
-    if (validateStep(step)) {
-      if (step < 4) setStep((s) => (s + 1) as 1 | 2 | 3 | 4)
-    }
-  }
-
-  function prevStep() {
-    if (step > 1) setStep((s) => (s - 1) as 1 | 2 | 3 | 4)
-  }
-
-  function handleSubmit() {
-    if (!validateStep(step)) return
-    if (onSubmit) onSubmit(formData)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
     setIsSuccess(true)
     setTimeout(() => {
       setIsSuccess(false)
       setStep(1)
-      setFormData(INITIAL_DATA)
       onClose()
     }, 1800)
   }
 
-  const stepsList = [
-    { num: 1, title: 'Asosiy parametrlar' },
-    { num: 2, title: 'Media & 3D Model' },
-    { num: 3, title: 'Narxlash & Shartlar' },
-    { num: 4, title: 'Tasdiqlash' },
-  ]
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-md transition-opacity duration-300 animate-in fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="wizard-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Building className="size-5" aria-hidden="true" />
-            </div>
-            <div>
-              <h2 id="wizard-title" className="text-lg font-bold text-card-foreground">
-                Yangi mulk e&apos;lonini yaratish
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Bosqichma-bosqich 3D va 360° tur bilan boyitilgan e&apos;lon berish
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label="Yopish"
-          >
-            <X className="size-4" aria-hidden="true" />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-border/80 bg-background p-6 shadow-2xl">
+        <button
+          onClick={onClose}
+          type="button"
+          className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Yopish"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-        {/* Progress Bar Header */}
-        <div className="border-b border-border bg-muted/30 px-6 py-3">
-          <div className="flex items-center justify-between gap-2">
-            {stepsList.map((s) => {
-              const active = step === s.num
-              const completed = step > s.num
-              return (
-                <div key={s.num} className="flex flex-1 items-center gap-2">
-                  <div
-                    className={`flex size-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
-                      completed
-                        ? 'bg-accent text-accent-foreground'
-                        : active
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {completed ? <Check className="size-3.5" aria-hidden="true" /> : s.num}
-                  </div>
-                  <span
-                    className={`hidden text-xs font-semibold sm:inline ${
-                      active ? 'text-foreground font-bold' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {s.title}
-                  </span>
-                </div>
-              )
-            })}
+        <div className="flex items-center gap-3 border-b border-border/60 pb-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Building2 className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Yangi Mulk Qoʻshish Wizard</h3>
+            <p className="text-xs text-muted-foreground">3D va Rent-to-Own taklifi bilan e'lon joylashtirish</p>
           </div>
         </div>
 
-        {/* Body Content */}
-        <div className="overflow-y-auto p-6 flex-1">
-          {isSuccess ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-center animate-in zoom-in-95">
-              <div className="flex size-14 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <CheckCircle2 className="size-8" aria-hidden="true" />
+        {/* Steps Progress Header */}
+        <div className="my-4 flex items-center justify-between px-2">
+          {[
+            { n: 1, label: 'Asosiy' },
+            { n: 2, label: 'Media & 3D' },
+            { n: 3, label: 'Narx & Shartlar' },
+            { n: 4, label: 'Tasdiqlash' },
+          ].map((s) => (
+            <div key={s.n} className="flex items-center gap-2">
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                  step >= s.n ? 'bg-primary text-primary-foreground' : 'bg-accent text-muted-foreground'
+                }`}
+              >
+                {s.n}
               </div>
-              <h3 className="text-xl font-bold text-foreground">
-                E&apos;lon muvaffaqiyatli yuborildi!
-              </h3>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                E&apos;loningiz moderatsiyaga yuborildi. Admin tasdiqlagach, katalogda va 3D ko&apos;rishda e&apos;lon qilinadi.
-              </p>
+              <span className={`text-xs hidden sm:inline ${step === s.n ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                {s.label}
+              </span>
+              {s.n < 4 && <div className="h-0.5 w-6 sm:w-10 bg-border/80" />}
             </div>
-          ) : (
-            <>
-              {/* STEP 1 */}
-              {step === 1 && (
-                <div className="flex flex-col gap-4 animate-in fade-in">
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-xs font-semibold text-foreground">
-                      Mulk sarlavhasi <span className="text-destructive">*</span>
-                    </span>
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => updateField('title', e.target.value)}
-                      placeholder="Masalan: Mirzo Ulug'bek tumanida 3 xonali yangi kvartira"
-                      className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:ring-2 focus:ring-ring ${
-                        errors.title ? 'border-destructive' : 'border-border'
-                      }`}
-                    />
-                    {errors.title && (
-                      <span className="flex items-center gap-1 text-xs text-destructive">
-                        <AlertCircle className="size-3" aria-hidden="true" />
-                        {errors.title}
-                      </span>
-                    )}
-                  </label>
+          ))}
+        </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">Mulk turi</span>
-                      <select
-                        value={formData.type}
-                        onChange={(e) => updateField('type', e.target.value as PropertyType)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring"
-                      >
-                        {Object.entries(PROPERTY_TYPE_LABELS).map(([k, label]) => (
-                          <option key={k} value={k}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">
-                        Maydoni (m²) <span className="text-destructive">*</span>
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={formData.area}
-                        onChange={(e) => updateField('area', Number(e.target.value))}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-ring"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">Xonalar</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={formData.rooms}
-                        onChange={(e) => updateField('rooms', Number(e.target.value))}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">Qavat</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={formData.floor}
-                        onChange={(e) => updateField('floor', Number(e.target.value))}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">Jami qavatlar</span>
-                      <input
-                        type="number"
-                        min={1}
-                        value={formData.totalFloors}
-                        onChange={(e) => updateField('totalFloors', Number(e.target.value))}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">Viloyat / Shahar</span>
-                      <select
-                        value={formData.region}
-                        onChange={(e) => updateField('region', e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      >
-                        {REGIONS.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">Tuman</span>
-                      <input
-                        type="text"
-                        value={formData.district}
-                        onChange={(e) => updateField('district', e.target.value)}
-                        placeholder="Masalan: Yunusobod tumani"
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                      />
-                    </label>
-                  </div>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-xs font-semibold text-foreground">
-                      Aniq manzil <span className="text-destructive">*</span>
-                    </span>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => updateField('address', e.target.value)}
-                      placeholder="Amir Temur shoh ko'chasi, 45-uy"
-                      className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground ${
-                        errors.address ? 'border-destructive' : 'border-border'
-                      }`}
-                    />
-                    {errors.address && (
-                      <span className="text-xs text-destructive">{errors.address}</span>
-                    )}
-                  </label>
+        {isSuccess ? (
+          <div className="my-8 flex flex-col items-center justify-center py-8 text-center animate-in zoom-in-95">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="h-10 w-10" />
+            </div>
+            <h4 className="text-xl font-bold text-foreground">Mulk Muvaffaqiyatli E'lon Qilindi!</h4>
+            <p className="mt-1 text-sm text-muted-foreground">
+              3D model va e'lon parametrlari moderatsiyaga yuborildi.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {step === 1 && (
+              <div className="space-y-3 animate-in fade-in-50">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-foreground">Mulk Sarlavhasi</label>
+                  <input
+                    type="text"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Masalan: Tashkent City Gardens 3-xonali Kvartira"
+                    className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
-              )}
 
-              {/* STEP 2 */}
-              {step === 2 && (
-                <div className="flex flex-col gap-5 animate-in fade-in">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <span className="text-xs font-semibold text-foreground">
-                      Mulk rasmlari yuklash
-                    </span>
-                    <div className="mt-2 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center hover:bg-muted/40 transition-colors cursor-pointer">
-                      <UploadCloud className="size-8 text-primary" aria-hidden="true" />
-                      <p className="text-xs font-semibold text-foreground">
-                        Rasmlarni bu yerga tashlang yoki faylni tanlang
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        PNG, JPG, WebP formatlar (Maks: 10 MB)
-                      </p>
-                    </div>
+                    <label className="mb-1 block text-xs font-semibold text-foreground">Mulk Turi</label>
+                    <select
+                      value={type}
+                      onChange={(e) => setType(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="kvartira">Kvartira</option>
+                      <option value="uy">Hovli Uy</option>
+                      <option value="ofis">Tijorat / Ofis</option>
+                      <option value="dokon">Doʻkon</option>
+                      <option value="ombor">Ombor</option>
+                    </select>
                   </div>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className="flex items-center gap-1 text-xs font-semibold text-foreground">
-                      <Camera className="size-3.5 text-accent" aria-hidden="true" />
-                      360° Virtual Tur havolasi (ixtiyoriy)
-                    </span>
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-foreground">Maydoni (m²)</label>
                     <input
-                      type="url"
-                      value={formData.virtualTourUrl}
-                      onChange={(e) => updateField('virtualTourUrl', e.target.value)}
-                      placeholder="https://matterport.com/show/?m=demo"
-                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                      type="number"
+                      required
+                      value={area}
+                      onChange={(e) => setArea(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                  </label>
-
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={formData.has3DModel}
-                        onChange={(e) => {
-                          updateField('has3DModel', e.target.checked)
-                          if (e.target.checked) updateField('modelFileName', 'apartment-3d-model.glb')
-                        }}
-                        className="size-4 accent-primary"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                          <Box className="size-4 text-primary" aria-hidden="true" />
-                          Haqiqiy 3D (.glb / .gltf) model biriktirish
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          3D CAD bino modelini katalog interaktiv viewerida render qilish
-                        </p>
-                      </div>
-                    </label>
-
-                    {formData.has3DModel && (
-                      <div className="mt-3 flex items-center justify-between rounded-lg bg-muted p-2.5 text-xs text-foreground">
-                        <span className="truncate font-mono">{formData.modelFileName}</span>
-                        <span className="rounded bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-                          Birlashtirildi (2.4 MB)
-                        </span>
-                      </div>
-                    )}
                   </div>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className="text-xs font-semibold text-foreground">Tavsif</span>
-                    <textarea
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) => updateField('description', e.target.value)}
-                      placeholder="Mulk va uning atrofidagi infratuzilma haqida batafsil ma'lumot..."
-                      className="w-full rounded-lg border border-border bg-background p-3 text-sm text-foreground"
-                    />
-                  </label>
                 </div>
-              )}
 
-              {/* STEP 3 */}
-              {step === 3 && (
-                <div className="flex flex-col gap-5 animate-in fade-in">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">
-                        Umumiy Narxi (so&apos;mda) <span className="text-destructive">*</span>
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        step={1_000_000}
-                        value={formData.price}
-                        onChange={(e) => updateField('price', Number(e.target.value))}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold text-primary"
-                      />
-                      <span className="text-[11px] text-muted-foreground">
-                        Format: {formatPrice(formData.price)}
-                      </span>
-                    </label>
-
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-foreground">1 m² narxi</span>
-                      <div className="h-9 flex items-center rounded-lg border border-border bg-muted/40 px-3 text-sm font-semibold text-foreground">
-                        {formatPrice(formData.pricePerM2)} / m²
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-foreground">Xonalar Soni</label>
+                    <input
+                      type="number"
+                      required
+                      value={rooms}
+                      onChange={(e) => setRooms(e.target.value)}
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                   </div>
-
-                  {/* Rent to Own Options */}
-                  <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <div>
-                        <p className="text-xs font-bold text-foreground">Rent-to-Own taklifi</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          Xaridorga ijara to&apos;lovi orqali sotib olish imkoniyatini taqdim etish
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={formData.rentToOwn}
-                        onChange={(e) => updateField('rentToOwn', e.target.checked)}
-                        className="size-4 accent-primary"
-                      />
-                    </label>
-
-                    {formData.rentToOwn && (
-                      <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3 pt-3 border-t border-border">
-                        <label className="flex flex-col gap-1">
-                          <span className="text-[11px] font-medium text-muted-foreground">
-                            Oylik to&apos;lov (so&apos;m)
-                          </span>
-                          <input
-                            type="number"
-                            value={formData.monthlyPayment}
-                            onChange={(e) => updateField('monthlyPayment', Number(e.target.value))}
-                            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-                          />
-                        </label>
-
-                        <label className="flex flex-col gap-1">
-                          <span className="text-[11px] font-medium text-muted-foreground">
-                            Min muddat (oy)
-                          </span>
-                          <input
-                            type="number"
-                            value={formData.minPeriodMonths}
-                            onChange={(e) => updateField('minPeriodMonths', Number(e.target.value))}
-                            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-                          />
-                        </label>
-
-                        <label className="flex flex-col gap-1">
-                          <span className="text-[11px] font-medium text-muted-foreground">
-                            Price-Lock yili
-                          </span>
-                          <input
-                            type="number"
-                            value={formData.priceLockYear}
-                            onChange={(e) => updateField('priceLockYear', Number(e.target.value))}
-                            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground"
-                          />
-                        </label>
-                      </div>
-                    )}
+                  <div>
+                    <label className="mb-1 block text-xs font-semibold text-foreground">Joylashuv (Tuman)</label>
+                    <input
+                      type="text"
+                      defaultValue="Shayxontohur tumani"
+                      className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
                   </div>
+                </div>
+              </div>
+            )}
 
-                  <label className="flex items-center justify-between rounded-xl border border-border bg-card p-4 cursor-pointer">
-                    <div>
-                      <p className="text-xs font-bold text-foreground">Bank ipoteka dasturiga kiritish</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        Hamkor banklar orqali subsidiyalangan ipoteka rasmiylashtirish
-                      </p>
-                    </div>
+            {step === 2 && (
+              <div className="space-y-4 animate-in fade-in-50">
+                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-6 text-center">
+                  <Upload className="mx-auto h-8 w-8 text-primary" />
+                  <p className="mt-2 text-xs font-semibold text-foreground">Rasmlarni shu yerga tashlang</p>
+                  <p className="text-[11px] text-muted-foreground">JPG, PNG formatida maks 20MB</p>
+                </div>
+
+                <div className="rounded-xl border border-border/80 bg-accent/30 p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                    <FileCode className="h-4 w-4 text-purple-500" />
+                    3D Model Yuklash (.GLB / .GLTF)
+                  </div>
+                  <input
+                    type="file"
+                    accept=".glb,.gltf"
+                    className="block w-full text-xs text-muted-foreground file:mr-4 file:rounded-xl file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground hover:file:bg-primary/90"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Brauzerda 3D render boʻlishi uchun max 200MB .glb fayl yuklang</p>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-4 animate-in fade-in-50">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-foreground">Toʻliq Narx (soʻmda)</label>
+                  <input
+                    type="number"
+                    required
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-bold text-emerald-600 dark:text-emerald-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    1 m² narxi: {Math.round(Number(price) / (Number(area) || 1)).toLocaleString()} soʻm
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border/80 p-4 space-y-3">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-xs font-bold text-foreground">Rent-to-Own Rejimi (Ijara va sotib olish)</span>
                     <input
                       type="checkbox"
-                      checked={formData.mortgageOffer}
-                      onChange={(e) => updateField('mortgageOffer', e.target.checked)}
-                      className="size-4 accent-primary"
+                      checked={rentToOwn}
+                      onChange={(e) => setRentToOwn(e.target.checked)}
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                     />
                   </label>
+
+                  {rentToOwn && (
+                    <div className="space-y-2 pt-2 border-t border-border/60 animate-in fade-in">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-foreground">Oylik Ijara Toʻlovi (soʻm)</label>
+                        <input
+                          type="number"
+                          value={monthlyRent}
+                          onChange={(e) => setMonthlyRent(e.target.value)}
+                          className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-xs text-foreground"
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">✓ Price-lock: 2 yillik boshlang'ich kelishilgan narx o'zgarmaydi.</p>
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* STEP 4 */}
-              {step === 4 && (
-                <div className="flex flex-col gap-4 animate-in fade-in">
-                  <h3 className="text-sm font-bold text-foreground">
-                    Ma&apos;lumotlarni yakuniy ko&apos;rib chiqish:
-                  </h3>
-
-                  <div className="rounded-xl border border-border bg-muted/20 p-4 flex flex-col gap-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="inline-block rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-                          {PROPERTY_TYPE_LABELS[formData.type]}
-                        </span>
-                        <h4 className="mt-1 text-base font-bold text-foreground">{formData.title}</h4>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="size-3.5 text-primary" />
-                          {formData.address}, {formData.district}, {formData.region}
-                        </p>
-                      </div>
-                      <p className="text-lg font-bold text-primary">{formatPrice(formData.price)}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs border-t border-border pt-3">
-                      <div>
-                        <span className="text-muted-foreground">Maydoni:</span>{' '}
-                        <span className="font-semibold">{formData.area} m²</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Xonalar:</span>{' '}
-                        <span className="font-semibold">{formData.rooms} xona</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Qavat:</span>{' '}
-                        <span className="font-semibold">
-                          {formData.floor}/{formData.totalFloors}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">1 m²:</span>{' '}
-                        <span className="font-semibold">{formatPrice(formData.pricePerM2)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {formData.has3DModel && (
-                        <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                          <Box className="size-3" aria-hidden="true" /> 3D Model Tayyor
-                        </span>
-                      )}
-                      {formData.rentToOwn && (
-                        <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-                          Rent-to-Own Mavjud
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        {!isSuccess && (
-          <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-card">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={step === 1}
-              className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 transition-opacity"
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-              <span>Orqaga</span>
-            </button>
-
-            {step < 4 ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-              >
-                <span>Keyingisi</span>
-                <ChevronRight className="size-4" aria-hidden="true" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                className="flex items-center gap-1.5 rounded-lg bg-accent px-6 py-2 text-xs font-bold text-accent-foreground hover:opacity-90 transition-opacity shadow-md"
-              >
-                <Check className="size-4" aria-hidden="true" />
-                <span>E&apos;lonni chop etish</span>
-              </button>
+              </div>
             )}
-          </div>
+
+            {step === 4 && (
+              <div className="space-y-3 animate-in fade-in-50 rounded-xl border border-border/80 bg-accent/20 p-4">
+                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">E'lon Ma'lumotlari Xulosasi</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div><span className="text-muted-foreground">Sarlavha:</span> <strong>{title || 'Yangi Mulk'}</strong></div>
+                  <div><span className="text-muted-foreground">Turi:</span> <strong>{type}</strong></div>
+                  <div><span className="text-muted-foreground">Maydoni:</span> <strong>{area} m²</strong></div>
+                  <div><span className="text-muted-foreground">Xonalar:</span> <strong>{rooms} xona</strong></div>
+                  <div><span className="text-muted-foreground">To'liq Narxi:</span> <strong className="text-emerald-500">{Number(price).toLocaleString()} so'm</strong></div>
+                  <div><span className="text-muted-foreground">Rent-to-Own:</span> <strong>{rentToOwn ? 'Mavjud' : 'Yo\'q'}</strong></div>
+                </div>
+              </div>
+            )}
+
+            {/* Wizard Navigation Footer */}
+            <div className="mt-6 flex justify-between border-t border-border/60 pt-4">
+              {step > 1 ? (
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="flex items-center gap-1 rounded-xl border border-input px-4 py-2 text-xs font-semibold text-foreground hover:bg-accent"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Orqaga
+                </button>
+              ) : (
+                <div />
+              )}
+
+              {step < 4 ? (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex items-center gap-1 rounded-xl bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground shadow hover:bg-primary/90"
+                >
+                  Keyingisi <ChevronRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="flex items-center gap-1 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-semibold text-white shadow hover:bg-emerald-700"
+                >
+                  E'lonni Joylashtirish <Check className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </form>
         )}
       </div>
     </div>
