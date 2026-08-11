@@ -19,6 +19,19 @@ const Property3DViewer = dynamic(
   },
 )
 
+const VirtualTourViewer = dynamic(
+  () => import('@/components/property/virtual-tour-viewer').then((m) => m.VirtualTourViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+        360° virtual tur yuklanmoqda...
+      </div>
+    ),
+  },
+)
+
 type MediaTab = 'photos' | '3d' | 'tour'
 
 export function PropertyMedia({ property }: { property: Property }) {
@@ -43,15 +56,7 @@ export function PropertyMedia({ property }: { property: Property }) {
           />
         )}
         {tab === '3d' && <Property3DViewer property={property} />}
-        {tab === 'tour' && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-            <Camera className="size-8 text-muted-foreground" aria-hidden="true" />
-            <p className="text-sm font-medium text-foreground">360° virtual tur</p>
-            <p className="max-w-xs px-4 text-xs text-muted-foreground">
-              Matterport / CloudPano integratsiyasi keyingi bosqichda ulanadi
-            </p>
-          </div>
-        )}
+        {tab === 'tour' && <VirtualTourViewer property={property} />}
       </div>
 
       <div className="flex gap-2" role="tablist" aria-label="Media turlari">

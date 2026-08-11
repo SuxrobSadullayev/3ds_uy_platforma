@@ -1,14 +1,16 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { Layers, SlidersHorizontal, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PropertyCard } from '@/components/property-card'
+import { CompareModal } from '@/components/catalog/compare-modal'
 import {
   properties,
   PROPERTY_TYPE_LABELS,
   PROPERTY_STATUS_LABELS,
   REGIONS,
+  type Property,
   type PropertyType,
   type PropertyStatus,
 } from '@/lib/data/properties'
@@ -33,6 +35,10 @@ export function CatalogClient() {
   const [sort, setSort] = useState<SortKey>('newest')
   const [filtersOpen, setFiltersOpen] = useState(false)
 
+  // Compare Modal state
+  const [compareIds, setCompareIds] = useState<string[]>([])
+  const [isCompareOpen, setIsCompareOpen] = useState(false)
+
   const filtered = useMemo(() => {
     let list = properties.filter((p) => p.status !== 'sotilgan')
     if (type !== 'all') list = list.filter((p) => p.type === type)
@@ -56,6 +62,31 @@ export function CatalogClient() {
     }
   }, [type, status, region, rooms, only3D, sort])
 
+  const compareProperties = useMemo(() => {
+    return properties.filter((p) => compareIds.includes(p.id))
+  }, [compareIds])
+
+  function toggleCompare(property: Property) {
+    setCompareIds((prev) => {
+      if (prev.includes(property.id)) {
+        return prev.filter((id) => id !== property.id)
+      }
+      if (prev.length >= 3) {
+        alert("Solishtirish uchun maksimum 3 ta mulk tanlashingiz mumkin.")
+        return prev
+      }
+      return [...prev, property.id]
+    })
+  }
+
+  function removeFromCompare(id: string) {
+    setCompareIds((prev) => prev.filter((item) => item !== id))
+  }
+
+  function clearCompare() {
+    setCompareIds([])
+  }
+
   const activeFilterCount =
     (type !== 'all' ? 1 : 0) +
     (status !== 'all' ? 1 : 0) +
@@ -75,7 +106,7 @@ export function CatalogClient() {
     'h-9 rounded-md border border-input bg-card px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring'
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 relative">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Button
           variant="outline"
@@ -205,14 +236,32 @@ export function CatalogClient() {
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground" aria-live="polite">
-        {filtered.length} ta mulk topildi
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {filtered.length} ta mulk topildi
+        </p>
+
+        {compareIds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsCompareOpen(true)}
+            className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+          >
+            <Layers className="size-3.5" aria-hidden="true" />
+            <span>Solishtirish ({compareIds.length}/3)</span>
+          </button>
+        )}
+      </div>
 
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+            <PropertyCard
+              key={property.id}
+              property={property}
+              onToggleCompare={toggleCompare}
+              isCompared={compareIds.includes(property.id)}
+            />
           ))}
         </div>
       ) : (
@@ -226,6 +275,49 @@ export function CatalogClient() {
           </Button>
         </div>
       )}
+
+      {/* Floating Compare Bar (Bottom) */}
+      {compareIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-border bg-card/95 px-5 py-2.5 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              {compareIds.length}
+            </span>
+            <span className="text-xs font-semibold text-foreground hidden sm:inline">
+              Mulk solishtirishga tanlandi
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCompareOpen(true)}
+              className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              <Layers className="size-3.5" aria-hidden="true" />
+              <span>Solishtirish</span>
+            </button>
+            <button
+              type="button"
+              onClick={clearCompare}
+              className="flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              title="Tozalash"
+              aria-label="Solishtirishni tozalash"
+            >
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Compare Modal */}
+      <CompareModal
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        properties={compareProperties}
+        onRemove={removeFromCompare}
+        onClearAll={clearCompare}
+      />
     </div>
   )
 }
