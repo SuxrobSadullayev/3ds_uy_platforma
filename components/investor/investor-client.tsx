@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowDownRight, ArrowUpRight, Bell, LineChart, Wallet } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Bell, LineChart, PieChart, Plus, Wallet } from 'lucide-react'
 import { MarketChart } from '@/components/dashboard/market-chart'
 import { RoiCalculator } from '@/components/investor/roi-calculator'
+import { FractionalOwnershipModal } from '@/components/investor/fractional-ownership-modal'
 import {
   portfolioItems,
   WATCH_ALERT_LABELS,
@@ -12,6 +14,8 @@ import {
 import { formatPrice } from '@/lib/data/properties'
 
 export function InvestorClient() {
+  const [isFractionalOpen, setIsFractionalOpen] = useState(false)
+
   const totalBuy = portfolioItems.reduce((s, p) => s + p.buyPrice, 0)
   const totalCurrent = portfolioItems.reduce((s, p) => s + p.currentPrice, 0)
   const totalIncome = portfolioItems.reduce((s, p) => s + (p.monthlyIncome ?? 0), 0)
@@ -19,42 +23,53 @@ export function InvestorClient() {
 
   return (
     <div className="flex flex-col gap-8">
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-          <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Wallet className="size-4" aria-hidden="true" />
-            </span>
-            Portfolio qiymati
-          </dt>
-          <dd className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-card-foreground">
-              {formatPrice(totalCurrent)}
-            </span>
-            <span className="text-xs font-semibold text-accent">+{growth.toFixed(1)}%</span>
-          </dd>
-        </div>
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-          <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <LineChart className="size-4" aria-hidden="true" />
-            </span>
-            Oylik ijara daromadi
-          </dt>
-          <dd className="text-xl font-bold text-card-foreground">{formatPrice(totalIncome)}</dd>
-        </div>
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-          <dt className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Bell className="size-4" aria-hidden="true" />
-            </span>
-            AI Kuzatuvdagi mulklar
-          </dt>
-          <dd className="text-xl font-bold text-card-foreground">
-            {watchedProperties.length} ta
-          </dd>
-        </div>
-      </dl>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3 flex-1">
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
+            <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Wallet className="size-4" aria-hidden="true" />
+              </span>
+              Portfolio qiymati
+            </dt>
+            <dd className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-card-foreground">
+                {formatPrice(totalCurrent)}
+              </span>
+              <span className="text-xs font-semibold text-accent">+{growth.toFixed(1)}%</span>
+            </dd>
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
+            <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <LineChart className="size-4" aria-hidden="true" />
+              </span>
+              Oylik ijara daromadi
+            </dt>
+            <dd className="text-xl font-bold text-card-foreground">{formatPrice(totalIncome)}</dd>
+          </div>
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
+            <dt className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Bell className="size-4" aria-hidden="true" />
+              </span>
+              AI Kuzatuvdagi mulklar
+            </dt>
+            <dd className="text-xl font-bold text-card-foreground">
+              {watchedProperties.length} ta
+            </dd>
+          </div>
+        </dl>
+
+        <button
+          type="button"
+          onClick={() => setIsFractionalOpen(true)}
+          className="flex items-center gap-2 rounded-xl bg-accent px-4 py-3 text-xs font-bold text-accent-foreground shadow-md hover:opacity-90 transition-opacity"
+        >
+          <PieChart className="size-4" aria-hidden="true" />
+          <span>Fraksional Ulush Sotib Olish</span>
+        </button>
+      </div>
 
       <section aria-labelledby="portfolio-heading">
         <h2 id="portfolio-heading" className="text-sm font-semibold text-foreground">
@@ -198,6 +213,12 @@ export function InvestorClient() {
           <RoiCalculator />
         </div>
       </section>
+
+      {/* Fractional Ownership Modal */}
+      <FractionalOwnershipModal
+        isOpen={isFractionalOpen}
+        onClose={() => setIsFractionalOpen(false)}
+      />
     </div>
   )
 }

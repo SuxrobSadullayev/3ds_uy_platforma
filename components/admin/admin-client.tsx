@@ -4,17 +4,21 @@ import { useState } from 'react'
 import {
   Building2,
   CheckCircle2,
+  Eye,
   FileClock,
   Gavel,
   Handshake,
   Search,
   ShieldAlert,
   ShieldCheck,
+  Sliders,
   Users,
   Wallet,
   XCircle,
 } from 'lucide-react'
 import { AdminRevenueChart } from '@/components/admin/admin-revenue-chart'
+import { ModerationModal, SystemSettingsForm } from '@/components/admin/moderation-modal'
+import { properties, type Property } from '@/lib/data/properties'
 import {
   auditLog,
   moderationQueue,
@@ -26,12 +30,13 @@ import {
   type UserStatus,
 } from '@/lib/data/admin'
 
-type Tab = 'umumiy' | 'foydalanuvchilar' | 'moderatsiya' | 'audit'
+type Tab = 'umumiy' | 'foydalanuvchilar' | 'moderatsiya' | 'sozlamalar' | 'audit'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'umumiy', label: 'Umumiy' },
   { id: 'foydalanuvchilar', label: 'Foydalanuvchilar' },
   { id: 'moderatsiya', label: 'Moderatsiya' },
+  { id: 'sozlamalar', label: 'Tizim sozlamalari' },
   { id: 'audit', label: 'Audit log' },
 ]
 
@@ -68,6 +73,7 @@ export function AdminClient() {
       {tab === 'umumiy' && <OverviewTab />}
       {tab === 'foydalanuvchilar' && <UsersTab />}
       {tab === 'moderatsiya' && <ModerationTab />}
+      {tab === 'sozlamalar' && <SystemSettingsForm />}
       {tab === 'audit' && <AuditTab />}
     </div>
   )
@@ -292,6 +298,7 @@ function UsersTab() {
 
 function ModerationTab() {
   const [decisions, setDecisions] = useState<Record<string, ModerationStatus>>({})
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
   function decide(id: string, decision: ModerationStatus) {
     setDecisions((prev) => ({ ...prev, [id]: decision }))
@@ -302,8 +309,7 @@ function ModerationTab() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted-foreground">
-        {pendingCount} ta e&apos;lon qaror kutmoqda. Tasdiqlangan e&apos;lonlar darhol katalogda
-        ko&apos;rinadi.
+        {pendingCount} ta e&apos;lon qaror kutmoqda. Tasdiqlangan e&apos;lonlar darhol katalogda ko&apos;rinadi.
       </p>
       <ul className="flex flex-col gap-3">
         {moderationQueue.map((item) => {
@@ -333,6 +339,14 @@ function ModerationTab() {
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProperty(properties[0])}
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted"
+                >
+                  <Eye className="size-3.5" aria-hidden="true" /> Batafsil
+                </button>
+
                 {decision === 'tasdiqlangan' && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
                     <CheckCircle2 className="size-3.5" aria-hidden="true" /> Tasdiqlandi
@@ -366,6 +380,15 @@ function ModerationTab() {
           )
         })}
       </ul>
+
+      {/* Moderation Inspection Modal */}
+      <ModerationModal
+        isOpen={!!selectedProperty}
+        onClose={() => setSelectedProperty(null)}
+        property={selectedProperty}
+        onApprove={(id) => decide(id, 'tasdiqlangan')}
+        onReject={(id) => decide(id, 'rad-etilgan')}
+      />
     </div>
   )
 }
