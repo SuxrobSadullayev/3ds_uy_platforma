@@ -37,18 +37,33 @@ export function AvmClient() {
       .slice(0, 3)
   }, [result, region])
 
+  const [formError, setFormError] = useState<string | null>(null)
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setFormError(null)
+
     const areaNum = Number(area)
-    if (!areaNum || areaNum <= 0) return
+    if (!areaNum || areaNum <= 0) {
+      setFormError('Maydon miqdori noldan katta bo\'lishi shart')
+      return
+    }
+
+    const floorNum = Number(floor)
+    const totalNum = Number(totalFloors)
+    if (floorNum && totalNum && floorNum > totalNum) {
+      setFormError(`Qavat (${floorNum}) jami qavatlar sonidan (${totalNum}) katta bo'lishi mumkin emas`)
+      return
+    }
+
     setResult(
       estimatePrice({
         region,
         type,
         area: areaNum,
         rooms: Number(rooms) || 1,
-        floor: Number(floor) || undefined,
-        totalFloors: Number(totalFloors) || undefined,
+        floor: floorNum || undefined,
+        totalFloors: totalNum || undefined,
         yearBuilt: Number(yearBuilt) || CURRENT_YEAR,
         hasRenovation,
         nearMetro,
@@ -70,6 +85,12 @@ export function AvmClient() {
           <Calculator className="size-5 text-primary" aria-hidden="true" />
           <h2 className="font-semibold">Mulk parametrlari</h2>
         </div>
+
+        {formError && (
+          <div className="rounded-lg bg-destructive/10 p-3 text-xs font-medium text-destructive">
+            {formError}
+          </div>
+        )}
 
         <div>
           <label htmlFor="avm-region" className={labelClass}>
@@ -215,7 +236,13 @@ export function AvmClient() {
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col gap-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground">Taxminiy bozor qiymati (AI AVM)</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground">Taxminiy bozor qiymati (AI AVM)</p>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
+                      <Sparkles className="size-3" aria-hidden="true" />
+                      AI Ishonch: {result.confidenceScore}%
+                    </span>
+                  </div>
                   <p className="mt-1 text-3xl font-bold tracking-tight text-primary md:text-4xl">
                     {formatPrice(result.estimatedPrice)}
                   </p>

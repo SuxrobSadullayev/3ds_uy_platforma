@@ -12,20 +12,16 @@ export function CtaSection() {
           {"Qurilish kompaniyalari, rieltorlar, investorlar va xaridorlar uchun yagona ekotizim. Bepul ro'yxatdan o'ting."}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Button
-            size="lg"
-            variant="secondary"
-            nativeButton={false} render={<Link href="/royxatdan-otish" />}
-          >
-            {"Ro'yxatdan o'tish"}
+          <Button size="lg" variant="secondary" asChild>
+            <Link href="/royxatdan-otish">{"Ro'yxatdan o'tish"}</Link>
           </Button>
           <Button
             size="lg"
             variant="outline"
             className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
-            nativeButton={false} render={<Link href="/mulklar" />}
+            asChild
           >
-            {"Mulklarni ko'rish"}
+            <Link href="/mulklar">{"Mulklarni ko'rish"}</Link>
           </Button>
         </div>
       </div>
