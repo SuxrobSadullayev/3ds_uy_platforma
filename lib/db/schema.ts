@@ -150,8 +150,7 @@ export const appointments = pgTable('appointments', {
   propertyId: uuid('property_id')
     .references(() => properties.id, { onDelete: 'cascade' })
     .notNull(),
-  date: text('date').notNull(),
-  time: text('time').notNull(),
+  appointmentDate: timestamp('appointment_date').notNull(),
   status: appointmentStatusEnum('status').default('scheduled').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })

@@ -19,7 +19,7 @@ export function PropertyCard({ property }: { property: Property }) {
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
-          src={property.image || '/placeholder.svg'}
+          src={property.image && property.image !== '/placeholder.svg' ? property.image : '/images/hero-city.png'}
           alt={property.title}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"

@@ -39,7 +39,7 @@ export const auctions: Auction[] = [
   {
     id: 'a-001',
     propertyId: 'p-007',
-    title: 'Davlat mulki: sobiq maktab binosi — Samarqand',
+    title: 'Samarqand Markaziy Biznes va Tijorat Majmuasi',
     type: 'ochiq',
     status: 'jonli',
     startPrice: 3_200_000_000,
@@ -55,7 +55,7 @@ export const auctions: Auction[] = [
   },
   {
     id: 'a-002',
-    title: "Ma'muriy bino — Buxoro markazi",
+    title: "Buxoro Markaziy Ma'muriy va Tijorat Binosi",
     type: 'ochiq',
     status: 'jonli',
     startPrice: 5_800_000_000,
@@ -71,7 +71,7 @@ export const auctions: Auction[] = [
   },
   {
     id: 'a-003',
-    title: 'Yer maydoni (0.8 ga) — Toshkent viloyati',
+    title: 'Toshkent Viloyati Logistika va Ishlab Chiqarish Yer Maydoni (0.8 ga)',
     type: 'vaqt-chekli',
     status: 'kutilmoqda',
     startPrice: 2_400_000_000,
@@ -87,7 +87,7 @@ export const auctions: Auction[] = [
   },
   {
     id: 'a-004',
-    title: 'Sobiq zavod ombori — Andijon',
+    title: 'Andijon Innovatsion Logistika va Omborxona Majmuasi',
     type: 'maxfiy',
     status: 'kutilmoqda',
     startPrice: 1_750_000_000,

@@ -13,10 +13,10 @@ const footerSections = [
   {
     title: 'Foydalanuvchilar',
     links: [
-      { href: '/royxatdan-otish', label: 'Xaridorlar uchun' },
-      { href: '/royxatdan-otish', label: 'Kompaniyalar uchun' },
-      { href: '/royxatdan-otish', label: 'Investorlar uchun' },
-      { href: '/royxatdan-otish', label: 'Rieltorlar uchun' },
+      { href: '/royxatdan-otish?role=xaridor', label: 'Xaridorlar uchun' },
+      { href: '/royxatdan-otish?role=kompaniya', label: 'Kompaniyalar uchun' },
+      { href: '/royxatdan-otish?role=investor', label: 'Investorlar uchun' },
+      { href: '/royxatdan-otish?role=rieltor', label: 'Rieltorlar uchun' },
     ],
   },
   {

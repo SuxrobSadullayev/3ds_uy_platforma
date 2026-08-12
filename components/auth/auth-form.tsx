@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Building2, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -11,6 +12,33 @@ const ROLES = [
   { value: 'kompaniya', label: 'Qurilish kompaniya' },
   { value: 'rieltor', label: 'Rieltor / Agent' },
 ] as const
+
+function RoleSelect() {
+  const searchParams = useSearchParams()
+  const roleParam = searchParams.get('role') || 'xaridor'
+  const [selectedRole, setSelectedRole] = useState(roleParam)
+
+  useEffect(() => {
+    if (roleParam) {
+      setSelectedRole(roleParam)
+    }
+  }, [roleParam])
+
+  return (
+    <select
+      name="role"
+      value={selectedRole}
+      onChange={(e) => setSelectedRole(e.target.value)}
+      className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary"
+    >
+      {ROLES.map((r) => (
+        <option key={r.value} value={r.value}>
+          {r.label}
+        </option>
+      ))}
+    </select>
+  )
+}
 
 export function AuthForm({ mode }: { mode: 'kirish' | 'royxat' }) {
   const isRegister = mode === 'royxat'
@@ -56,16 +84,15 @@ export function AuthForm({ mode }: { mode: 'kirish' | 'royxat' }) {
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-muted-foreground">Rol</span>
-              <select
-                name="role"
-                className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary"
+              <Suspense
+                fallback={
+                  <select className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none">
+                    <option>Xaridor</option>
+                  </select>
+                }
               >
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+                <RoleSelect />
+              </Suspense>
             </label>
           </>
         )}

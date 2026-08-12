@@ -317,14 +317,14 @@ export function CompareModal({
                             <ExternalLink className="size-3.5" aria-hidden="true" />
                             <span>Batafsil ko&apos;rish</span>
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => alert(`${p.seller.name} bilan chat boshlandi!`)}
+                          <Link
+                            href={`/mulklar/${p.id}?chat=true`}
+                            onClick={onClose}
                             className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground hover:bg-muted transition-colors"
                           >
                             <MessageSquare className="size-3.5" aria-hidden="true" />
                             <span>Chat</span>
-                          </button>
+                          </Link>
                         </div>
                       </td>
                     ))}

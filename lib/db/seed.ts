@@ -8,7 +8,8 @@ async function seed() {
   console.log('🌱 Database Seeding boshlandi...')
 
   try {
-    const defaultPassword = await bcrypt.hash('password123', 10)
+    const seedPassword = process.env.SEED_DEFAULT_PASSWORD || 'SecureDefaultPassword!2026'
+    const defaultPassword = await bcrypt.hash(seedPassword, 10)
 
     // 1. Seed Users
     let [demoSeller] = await db
