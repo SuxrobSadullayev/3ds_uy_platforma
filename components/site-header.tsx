@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import { Building2, Menu, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,7 @@ const mobileOnlyLinks = [
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
@@ -40,15 +42,23 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex" aria-label="Asosiy navigatsiya">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`text-sm font-medium transition-colors hover:text-foreground relative py-1 ${
+                  isActive
+                    ? 'text-foreground font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -59,16 +69,17 @@ export function SiteHeader() {
               variant="ghost"
               size="icon"
               aria-label="Profil sozlamalari"
-              nativeButton={false}
-              render={<Link href="/profil" />}
+              asChild
             >
-              <UserRound className="size-4" aria-hidden="true" />
+              <Link href="/profil">
+                <UserRound className="size-4" aria-hidden="true" />
+              </Link>
             </Button>
-            <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/kirish" />}>
-              Kirish
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/kirish">Kirish</Link>
             </Button>
-            <Button size="sm" nativeButton={false} render={<Link href="/royxatdan-otish" />}>
-              {"Ro'yxatdan o'tish"}
+            <Button size="sm" asChild>
+              <Link href="/royxatdan-otish">{"Ro'yxatdan o'tish"}</Link>
             </Button>
           </div>
 
@@ -89,27 +100,35 @@ export function SiteHeader() {
           className="flex flex-col gap-1 border-t border-border bg-background px-4 py-3 md:hidden"
           aria-label="Mobil navigatsiya"
         >
-          {[...navLinks, ...mobileOnlyLinks].map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={() => setOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {[...navLinks, ...mobileOnlyLinks].map((link) => {
+            const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+                onClick={() => setOpen(false)}
+              >
+                {link.label}
+              </Link>
+            )
+          })}
           <div className="mt-2 flex gap-2 border-t border-border pt-3">
             <Button
               variant="outline"
               size="sm"
               className="flex-1"
-              nativeButton={false} render={<Link href="/kirish" />}
+              asChild
             >
-              Kirish
+              <Link href="/kirish">Kirish</Link>
             </Button>
-            <Button size="sm" className="flex-1" nativeButton={false} render={<Link href="/royxatdan-otish" />}>
-              {"Ro'yxatdan o'tish"}
+            <Button size="sm" className="flex-1" asChild>
+              <Link href="/royxatdan-otish">{"Ro'yxatdan o'tish"}</Link>
             </Button>
           </div>
         </nav>
