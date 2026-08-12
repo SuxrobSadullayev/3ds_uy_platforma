@@ -8,12 +8,13 @@ export function R2oCalculator({ onOpenAgreement }: { onOpenAgreement?: () => voi
   const [propertyPrice, setPropertyPrice] = useState<number>(1_200_000_000)
   const [contractMonths, setContractMonths] = useState<number>(36)
   const [monthlyPayment, setMonthlyPayment] = useState<number>(15_000_000)
+  const [equityRatio, setEquityRatio] = useState<number>(0.6) // 60% default
 
   const calculations = useMemo(() => {
     const totalPaidOverTerm = monthlyPayment * contractMonths
-    // 60% of monthly payment goes to equity accumulation, 40% goes to pure rent
-    const equityPerMonth = monthlyPayment * 0.6
-    const rentPerMonth = monthlyPayment * 0.4
+    // Custom equity ratio allocation vs pure rent
+    const equityPerMonth = monthlyPayment * equityRatio
+    const rentPerMonth = monthlyPayment * (1 - equityRatio)
 
     const totalEquityAccumulated = equityPerMonth * contractMonths
     const equityPercent = Math.min(100, Math.round((totalEquityAccumulated / propertyPrice) * 100))
@@ -27,7 +28,7 @@ export function R2oCalculator({ onOpenAgreement }: { onOpenAgreement?: () => voi
       equityPercent,
       remainingBalance,
     }
-  }, [propertyPrice, contractMonths, monthlyPayment])
+  }, [propertyPrice, contractMonths, monthlyPayment, equityRatio])
 
   return (
     <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
@@ -63,9 +64,18 @@ export function R2oCalculator({ onOpenAgreement }: { onOpenAgreement?: () => voi
         <div className="flex flex-col gap-5">
           {/* Mulk narxi */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-foreground">
               <span>Mulkning kelishilgan narxi:</span>
-              <span className="font-bold text-primary">{formatPrice(propertyPrice)}</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step={10_000_000}
+                  value={propertyPrice}
+                  onChange={(e) => setPropertyPrice(Math.max(100_000_000, Number(e.target.value)))}
+                  className="h-7 w-36 rounded-md border border-input bg-background px-2 text-xs font-bold text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <span className="font-bold text-primary">{formatPrice(propertyPrice)}</span>
+              </div>
             </div>
             <input
               type="range"
@@ -99,11 +109,41 @@ export function R2oCalculator({ onOpenAgreement }: { onOpenAgreement?: () => voi
             </div>
           </div>
 
+          {/* Ulush Nisbati Selector */}
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold text-foreground">Sotib olish ulushi nisbati (Equity Ratio):</span>
+            <div className="grid grid-cols-4 gap-2">
+              {[0.5, 0.6, 0.7, 0.8].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setEquityRatio(r)}
+                  className={`rounded-xl border py-1.5 text-xs font-bold transition-all ${
+                    equityRatio === r
+                      ? 'border-accent bg-accent text-accent-foreground shadow-sm'
+                      : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {Math.round(r * 100)}% ulush
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Oylik to'lov */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-foreground">
               <span>Oylik to&apos;lov miqdori:</span>
-              <span className="font-bold text-accent">{formatPrice(monthlyPayment)} /oy</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step={1_000_000}
+                  value={monthlyPayment}
+                  onChange={(e) => setMonthlyPayment(Math.max(1_000_000, Number(e.target.value)))}
+                  className="h-7 w-32 rounded-md border border-input bg-background px-2 text-xs font-bold text-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                />
+                <span className="font-bold text-accent">{formatPrice(monthlyPayment)} /oy</span>
+              </div>
             </div>
             <input
               type="range"
@@ -134,13 +174,13 @@ export function R2oCalculator({ onOpenAgreement }: { onOpenAgreement?: () => voi
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="rounded-lg border border-border bg-card p-3">
-              <span className="text-muted-foreground text-[11px]">Sotib olish ulushi (60%):</span>
+              <span className="text-muted-foreground text-[11px]">Sotib olish ulushi ({Math.round(equityRatio * 100)}%):</span>
               <p className="text-sm font-bold text-accent mt-0.5">
                 {formatPrice(calculations.equityPerMonth)} /oy
               </p>
             </div>
             <div className="rounded-lg border border-border bg-card p-3">
-              <span className="text-muted-foreground text-[11px]">Ijara qismi (40%):</span>
+              <span className="text-muted-foreground text-[11px]">Ijara qismi ({Math.round((1 - equityRatio) * 100)}%):</span>
               <p className="text-sm font-bold text-muted-foreground mt-0.5">
                 {formatPrice(calculations.rentPerMonth)} /oy
               </p>
