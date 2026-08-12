@@ -109,8 +109,17 @@ export function estimatePrice(input: AvmInput): AvmResult {
 
   const estimatedPrice = Math.round(pricePerM2 * input.area)
 
-  // Baholashning ishonchlilik darajasi (Confidence Score)
-  const confidenceScore = input.region === 'Toshkent shahri' ? 94 : 88
+  // Dynamic confidence score based on input completeness & regional statistical variance
+  let confidenceScore = 75
+  if (input.region === 'Toshkent shahri') confidenceScore += 10
+  else if (input.region === 'Toshkent viloyati' || input.region === 'Samarqand') confidenceScore += 7
+  else confidenceScore += 4
+
+  if (input.floor && input.totalFloors) confidenceScore += 4
+  if (input.yearBuilt > 1990) confidenceScore += 3
+  if (input.hasRenovation) confidenceScore += 2
+  if (input.nearMetro) confidenceScore += 2
+  confidenceScore = Math.min(96, confidenceScore)
 
   return {
     estimatedPrice,

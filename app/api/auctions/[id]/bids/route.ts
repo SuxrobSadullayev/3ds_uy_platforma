@@ -89,19 +89,13 @@ export async function POST(
     const sessionToken = sessionTokenMatch ? sessionTokenMatch[1] : null
     const sessionPayload = verifySessionToken(sessionToken)
 
-    let userId = sessionPayload?.userId
+    const userId = sessionPayload?.userId
 
-    // If no valid session, check if there's any user in DB to associate, or return error
     if (!userId) {
-      const [firstUser] = await db.select({ id: users.id }).from(users).limit(1)
-      if (firstUser) {
-        userId = firstUser.id
-      } else {
-        return NextResponse.json(
-          { success: false, error: 'Stavka berish uchun tizimga kiring' },
-          { status: 401 }
-        )
-      }
+      return NextResponse.json(
+        { success: false, error: 'Auksionda qatnashish va stavka berish uchun tizimga kiring' },
+        { status: 401 }
+      )
     }
 
     // Fetch auction details from DB
