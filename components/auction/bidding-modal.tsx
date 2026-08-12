@@ -11,7 +11,7 @@ export interface BiddingModalProps {
   currentBid: number
   bidAmount: number
   bidIncrement: number
-  onConfirmBid: (amount: number) => void
+  onConfirmBid: (amount: number) => Promise<{ success: boolean; error?: string } | void> | void
 }
 
 export function BiddingModal({
@@ -23,11 +23,20 @@ export function BiddingModal({
   bidIncrement,
   onConfirmBid,
 }: BiddingModalProps) {
+  const minRequiredBid = currentBid + bidIncrement
+  const [customBid, setCustomBid] = useState<number>(Math.max(bidAmount, minRequiredBid))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const commissionFee = Math.round(bidAmount * 0.015) // 1.5% auktsion komissiyasi
-  const totalCost = bidAmount + commissionFee
+  const activeBid = Math.max(customBid, minRequiredBid)
+  const commissionFee = Math.round(activeBid * 0.015) // 1.5% auktsion komissiyasi
+  const totalCost = activeBid + commissionFee
+
+  useEffect(() => {
+    setCustomBid(Math.max(bidAmount, currentBid + bidIncrement))
+    setErrorMessage(null)
+  }, [bidAmount, currentBid, bidIncrement, isOpen])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -39,17 +48,33 @@ export function BiddingModal({
 
   if (!isOpen) return null
 
-  function handleConfirm() {
+  async function handleConfirm() {
+    if (customBid < minRequiredBid) {
+      setErrorMessage(`Stavka miqdori kamida ${formatPrice(minRequiredBid)} bo'lishi kerak`)
+      return
+    }
+
     setIsSubmitting(true)
-    setTimeout(() => {
-      onConfirmBid(bidAmount)
+    setErrorMessage(null)
+
+    try {
+      const res = await onConfirmBid(customBid)
+      if (res && typeof res === 'object' && res.success === false) {
+        setErrorMessage(res.error || 'Stavka yuborishda xatolik yuz berdi')
+        setIsSubmitting(false)
+        return
+      }
+
       setIsSubmitting(false)
       setIsConfirmed(true)
       setTimeout(() => {
         setIsConfirmed(false)
         onClose()
       }, 1500)
-    }, 1000)
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Serverda xatolik yuz berdi. Qayta urinib ko\'ring.')
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -95,23 +120,44 @@ export function BiddingModal({
               </div>
               <h3 className="text-lg font-bold text-foreground">Stavka Muvaffaqiyatli Berildi!</h3>
               <p className="text-xs text-muted-foreground">
-                Yangi stavkangiz: <span className="font-bold text-primary">{formatPrice(bidAmount)}</span>
+                Yangi stavkangiz: <span className="font-bold text-primary">{formatPrice(customBid)}</span>
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <div className="rounded-xl border border-border bg-muted/20 p-4 flex flex-col gap-2">
+              {errorMessage && (
+                <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs font-semibold text-destructive animate-in fade-in">
+                  <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-border bg-muted/20 p-4 flex flex-col gap-2.5">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">Joriy eng yuqori taklif:</span>
                   <span className="font-semibold text-foreground">{formatPrice(currentBid)}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Stavka qadami:</span>
+                  <span className="text-muted-foreground">Min stavka qadami:</span>
                   <span className="font-semibold text-foreground">+{formatPrice(bidIncrement)}</span>
                 </div>
-                <div className="border-t border-border pt-2 flex justify-between items-center">
-                  <span className="text-xs font-bold text-foreground">Yangi berilayotgan stavka:</span>
-                  <span className="text-base font-bold text-primary">{formatPrice(bidAmount)}</span>
+
+                <div className="border-t border-border pt-2.5 flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="custom-bid-input" className="text-xs font-bold text-foreground">
+                      Berilayotgan stavka (so&apos;m):
+                    </label>
+                    <span className="text-xs font-bold text-primary">{formatPrice(customBid)}</span>
+                  </div>
+                  <input
+                    id="custom-bid-input"
+                    type="number"
+                    step={bidIncrement}
+                    min={minRequiredBid}
+                    value={customBid}
+                    onChange={(e) => setCustomBid(Number(e.target.value))}
+                    className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               </div>
 
@@ -134,10 +180,10 @@ export function BiddingModal({
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={isSubmitting}
+                disabled={isSubmitting || customBid < minRequiredBid}
                 className="w-full rounded-xl bg-destructive py-3 text-xs font-bold text-white shadow-md hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
-                {isSubmitting ? 'Stavka yuborilmoqda...' : `Stavkani Tasdiqlash (${formatPrice(bidAmount)})`}
+                {isSubmitting ? 'Stavka yuborilmoqda...' : `Stavkani Tasdiqlash (${formatPrice(customBid)})`}
               </button>
             </div>
           )}
