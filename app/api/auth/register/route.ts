@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { registerSchema } from '@/lib/validations/auth'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 import { createSessionToken } from '@/lib/auth/session'
 
 // Map public form role strings to DB user_role enum values
@@ -42,13 +42,28 @@ export async function POST(request: Request) {
     // Sanitize role: public registration cannot create admins or super_admins
     const mappedRole = ROLE_MAP[role] || 'buyer'
 
-    // Check existing user in DB
-    const existing = await db.select().from(users).where(eq(users.email, sanitizedEmail))
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { success: false, error: 'Ushbu email bilan foydalanuvchi allaqachon mavjud' },
-        { status: 400 }
-      )
+    // Check existing user in DB by email or phone
+    const existingUsers = await db
+      .select()
+      .from(users)
+      .where(or(eq(users.email, sanitizedEmail), eq(users.phone, phone)))
+
+    if (existingUsers.length > 0) {
+      const emailExists = existingUsers.some((u) => u.email === sanitizedEmail)
+      const phoneExists = existingUsers.some((u) => u.phone === phone)
+
+      if (emailExists) {
+        return NextResponse.json(
+          { success: false, error: 'Ushbu email bilan foydalanuvchi allaqachon mavjud' },
+          { status: 400 }
+        )
+      }
+      if (phoneExists) {
+        return NextResponse.json(
+          { success: false, error: 'Ushbu telefon raqami bilan foydalanuvchi allaqachon mavjud' },
+          { status: 400 }
+        )
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
