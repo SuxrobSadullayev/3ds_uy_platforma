@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { Component, ReactNode, Suspense, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { ContactShadows, Environment, Html, OrbitControls, useGLTF } from '@react-three/drei'
 import type { Property } from '@/lib/data/properties'
@@ -15,20 +15,58 @@ interface Room {
   color: string
 }
 
+interface ErrorBoundaryProps {
+  fallback: ReactNode
+  children: ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+}
+
+class ModelErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    console.warn('3D GLTF Model loading failed, falling back to procedural 3D layout:', error)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+    return this.props.children
+  }
+}
+
 function GltfModel({ url }: { url: string }) {
   const { scene } = useGLTF(url)
   return <primitive object={scene} scale={1} position={[0, 0, 0]} />
 }
 
 function buildRooms(property: Property): Room[] {
-  const count = Math.min(property.rooms, 4)
+  const totalArea = property.area || 65
+  const count = Math.min(Math.max(property.rooms, 1), 4)
+
+  const livingSize = Math.round(totalArea * 0.38)
+  const bedSize = Math.round(totalArea * 0.28)
+  const kitchenSize = Math.round(totalArea * 0.20)
+  const kidsSize = Math.max(10, Math.round(totalArea - (livingSize + bedSize + kitchenSize)))
+
   const base: Room[] = [
-    { name: 'Mehmonxona', size: '24 m²', x: -1.6, z: -1.2, w: 3, d: 2.4, color: '#dbe7f0' },
-    { name: 'Yotoqxona', size: '18 m²', x: 1.8, z: -1.2, w: 2.6, d: 2.4, color: '#e4ede6' },
-    { name: 'Oshxona', size: '14 m²', x: -1.8, z: 1.5, w: 2.6, d: 2.2, color: '#f0e9dc' },
-    { name: 'Bolalar xonasi', size: '15 m²', x: 1.7, z: 1.5, w: 2.4, d: 2.2, color: '#e9e2ef' },
+    { name: 'Mehmonxona', size: `${livingSize} m²`, x: -1.6, z: -1.2, w: 3, d: 2.4, color: '#dbe7f0' },
+    { name: 'Yotoqxona', size: `${bedSize} m²`, x: 1.8, z: -1.2, w: 2.6, d: 2.4, color: '#e4ede6' },
+    { name: 'Oshxona', size: `${kitchenSize} m²`, x: -1.8, z: 1.5, w: 2.6, d: 2.2, color: '#f0e9dc' },
+    { name: 'Bolalar xonasi', size: `${kidsSize} m²`, x: 1.7, z: 1.5, w: 2.4, d: 2.2, color: '#e9e2ef' },
   ]
-  return base.slice(0, Math.max(count, 2))
+  return base.slice(0, count)
 }
 
 function ProceduralApartmentModel({ property }: { property: Property }) {
@@ -131,7 +169,7 @@ export function Property3DViewer({ property }: { property: Property }) {
   const hasExternalModel = Boolean(property.modelUrl && property.modelUrl.endsWith('.glb'))
 
   return (
-    <div className="relative h-full w-full bg-slate-900/5 rounded-xl overflow-hidden" aria-label="3D kvartira modeli">
+    <div className="relative h-full w-full bg-slate-900/5 rounded-xl overflow-hidden touch-none" aria-label="3D kvartira modeli">
       <Canvas shadows camera={{ position: [7, 6, 7], fov: 42 }}>
         <ambientLight intensity={0.7} />
         <directionalLight
@@ -150,7 +188,9 @@ export function Property3DViewer({ property }: { property: Property }) {
           }
         >
           {hasExternalModel && property.modelUrl ? (
-            <GltfModel url={property.modelUrl} />
+            <ModelErrorBoundary fallback={<ProceduralApartmentModel property={property} />}>
+              <GltfModel url={property.modelUrl} />
+            </ModelErrorBoundary>
           ) : (
             <ProceduralApartmentModel property={property} />
           )}
