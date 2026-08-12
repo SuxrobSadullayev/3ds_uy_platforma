@@ -120,6 +120,14 @@ function PanoramaSphere({
   texture.mapping = THREE.EquirectangularReflectionMapping
   texture.colorSpace = THREE.SRGBColorSpace
 
+  useEffect(() => {
+    return () => {
+      if (texture) {
+        texture.dispose()
+      }
+    }
+  }, [texture])
+
   return (
     <group>
       {/* 360 Panorama Inverted Sphere */}
@@ -149,7 +157,7 @@ function PanoramaSphere({
 
 function TourLoader() {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/40 text-muted-foreground">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl bg-black/80 px-6 py-4 text-white shadow-2xl backdrop-blur-md">
       <Sparkles className="size-6 animate-spin text-primary" aria-hidden="true" />
       <span className="text-xs font-medium">360° panorama yuklanmoqda...</span>
     </div>
@@ -201,7 +209,7 @@ export function VirtualTourViewer({ property, customRooms }: VirtualTourViewerPr
       aria-label="360 darajali virtual tur"
     >
       <Canvas camera={{ position: [0, 0, 0.1], fov: 60 }}>
-        <Suspense fallback={null}>
+        <Suspense fallback={<Html center><TourLoader /></Html>}>
           <PanoramaSphere
             imageUrl={activeRoom.image}
             hotspots={activeRoom.hotspots}
@@ -212,6 +220,8 @@ export function VirtualTourViewer({ property, customRooms }: VirtualTourViewerPr
           ref={controlsRef}
           enableZoom={false}
           enablePan={false}
+          autoRotate={true}
+          autoRotateSpeed={0.5}
           rotateSpeed={-0.45}
         />
       </Canvas>
