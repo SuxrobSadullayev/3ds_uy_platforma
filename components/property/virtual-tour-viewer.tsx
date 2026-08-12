@@ -117,6 +117,8 @@ function PanoramaSphere({
   onNavigate: (targetId: string) => void
 }) {
   const texture = useLoader(THREE.TextureLoader, imageUrl)
+  texture.mapping = THREE.EquirectangularReflectionMapping
+  texture.colorSpace = THREE.SRGBColorSpace
 
   return (
     <group>

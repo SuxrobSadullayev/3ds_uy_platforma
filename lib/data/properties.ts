@@ -28,6 +28,7 @@ export interface Property {
   images: string[]
   description: string
   has3D: boolean
+  modelUrl?: string
   hasVirtualTour: boolean
   rentToOwn?: boolean
   featured?: boolean

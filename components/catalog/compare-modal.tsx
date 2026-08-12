@@ -294,7 +294,9 @@ export function CompareModal({
                         <div className="flex items-center gap-1">
                           <span>{p.seller.name}</span>
                           {p.seller.verified && (
-                            <BadgeCheck className="size-3.5 text-accent shrink-0" title="Tasdiqlangan" aria-hidden="true" />
+                            <span title="Tasdiqlangan">
+                              <BadgeCheck className="size-3.5 text-accent shrink-0" aria-hidden="true" />
+                            </span>
                           )}
                         </div>
                       </td>

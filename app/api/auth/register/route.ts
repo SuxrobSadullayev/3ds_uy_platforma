@@ -4,6 +4,21 @@ import { registerSchema } from '@/lib/validations/auth'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { createSessionToken } from '@/lib/auth/session'
+
+// Map public form role strings to DB user_role enum values
+const ROLE_MAP: Record<string, 'buyer' | 'realtor' | 'company' | 'investor' | 'bank' | 'state_operator'> = {
+  xaridor: 'buyer',
+  buyer: 'buyer',
+  rieltor: 'realtor',
+  realtor: 'realtor',
+  kompaniya: 'company',
+  company: 'company',
+  investor: 'investor',
+  bank: 'bank',
+  davlat: 'state_operator',
+  state_operator: 'state_operator',
+}
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Validation failed',
+          error: 'Kiritilgan ma\'lumotlar noto\'g\'ri',
           details: validationResult.error.flatten().fieldErrors,
         },
         { status: 400 }
@@ -22,56 +37,50 @@ export async function POST(request: Request) {
     }
 
     const { fullName, email, phone, password, role } = validationResult.data
+
+    // Sanitize role: public registration cannot create admins or super_admins
+    const mappedRole = ROLE_MAP[role] || 'buyer'
+
+    // Check existing user in DB
+    const existing = await db.select().from(users).where(eq(users.email, email))
+    if (existing.length > 0) {
+      return NextResponse.json(
+        { success: false, error: 'Ushbu email bilan foydalanuvchi allaqachon mavjud' },
+        { status: 400 }
+      )
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    let createdUser = null
-
-    try {
-      // Check existing user in DB
-      const existing = await db.select().from(users).where(eq(users.email, email))
-      if (existing.length > 0) {
-        return NextResponse.json(
-          { success: false, error: 'Ushbu email bilan foydalanuvchi allaqachon mavjud' },
-          { status: 400 }
-        )
-      }
-
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          name: fullName,
-          email,
-          phone,
-          role: role as any,
-          passwordHash: hashedPassword,
-        })
-        .returning()
-
-      createdUser = newUser
-    } catch {
-      // Offline dev mode fallback
-      createdUser = {
-        id: `u-${Date.now()}`,
+    const [newUser] = await db
+      .insert(users)
+      .values({
         name: fullName,
         email,
         phone,
-        role,
-        isBlocked: false,
-        createdAt: new Date(),
-      }
+        role: mappedRole,
+        passwordHash: hashedPassword,
+      })
+      .returning()
+
+    if (!newUser) {
+      return NextResponse.json(
+        { success: false, error: 'Foydalanuvchini saqlashda xatolik yuz berdi' },
+        { status: 500 }
+      )
     }
 
-    const sessionToken = `session_${Date.now()}_${createdUser.id}`
+    const sessionToken = createSessionToken(newUser.id, newUser.role, newUser.email)
     const response = NextResponse.json(
       {
         success: true,
-        message: "Ro'yxatdan muvaffaqiyatli o'tildi",
+        message: 'Ro\'yxatdan muvaffaqiyatli o\'tildi',
         user: {
-          id: createdUser.id,
-          name: createdUser.name,
-          email: createdUser.email,
-          phone: createdUser.phone,
-          role: createdUser.role,
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          role: newUser.role,
         },
       },
       { status: 201 }
@@ -86,7 +95,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
-    response.cookies.set('user_role', createdUser.role, {
+    response.cookies.set('user_role', newUser.role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -96,8 +105,9 @@ export async function POST(request: Request) {
 
     return response
   } catch (err: any) {
+    console.error('Register Error:', err)
     return NextResponse.json(
-      { success: false, error: err.message || 'Server error' },
+      { success: false, error: 'Serverda xatolik yuz berdi. Qayta urinib ko\'ring.' },
       { status: 500 }
     )
   }

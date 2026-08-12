@@ -5,6 +5,7 @@ import {
   toUIMessageStream,
   type UIMessage,
 } from 'ai'
+import { google } from '@ai-sdk/google'
 import { properties, formatPrice, PROPERTY_TYPE_LABELS } from '@/lib/data/properties'
 
 export const maxDuration = 30
@@ -38,15 +39,43 @@ MULKLAR KATALOGI:
 ${propertyCatalog}`
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json()
+  try {
+    const { messages }: { messages: UIMessage[] } = await req.json()
 
-  const result = streamText({
-    model: 'google/gemini-3-flash',
-    system: systemPrompt,
-    messages: await convertToModelMessages(messages),
-  })
+    // Check if API key is present, fallback to gemini-1.5-flash provider
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY
 
-  return createUIMessageStreamResponse({
-    stream: toUIMessageStream({ stream: result.stream }),
-  })
+    if (!apiKey) {
+      // Graceful offline fallback response if API key is missing
+      const lastUserMsg = messages[messages.length - 1]?.parts?.[0]
+      const promptText = typeof lastUserMsg === 'object' && 'text' in lastUserMsg ? lastUserMsg.text : 'Savol'
+
+      const fallbackReply = `Assalomu alaykum! 3D MULK AI Yordamchisiman. Sizning so'rovingiz: "${promptText}". Hozirda AI API kalit sozlamasi kutilmoqda. Mulklar katalogini ko'rish uchun /mulklar bo'limiga o'ting.`
+
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(fallbackReply))
+          controller.close()
+        },
+      })
+
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      })
+    }
+
+    const result = streamText({
+      model: google('gemini-1.5-flash'),
+      system: systemPrompt,
+      messages: await convertToModelMessages(messages),
+    })
+
+    return createUIMessageStreamResponse({
+      stream: toUIMessageStream({ stream: result.stream }),
+    })
+  } catch (err: any) {
+    console.error('AI Chatbot Route Error:', err)
+    return new Response('AI xizmatida xatolik yuz berdi.', { status: 500 })
+  }
 }

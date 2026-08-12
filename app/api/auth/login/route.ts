@@ -4,6 +4,7 @@ import { loginSchema } from '@/lib/validations/auth'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { createSessionToken } from '@/lib/auth/session'
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Validation failed',
+          error: 'Kiritilgan ma\'lumotlar noto\'g\'ri',
           details: validationResult.error.flatten().fieldErrors,
         },
         { status: 400 }
@@ -22,68 +23,56 @@ export async function POST(request: Request) {
     }
 
     const { email, password } = validationResult.data
-    let targetUser = null
 
-    try {
-      const [user] = await db.select().from(users).where(eq(users.email, email))
+    const [user] = await db.select().from(users).where(eq(users.email, email))
 
-      if (!user) {
-        return NextResponse.json(
-          { success: false, error: 'Email yoki parol noto\'g\'ri' },
-          { status: 401 }
-        )
-      }
-
-      if (user.isBlocked) {
-        return NextResponse.json(
-          { success: false, error: 'Hisobingiz bloklangan. Qo\'llab-quvvatlash xizmatiga murojaat qiling.' },
-          { status: 403 }
-        )
-      }
-
-      const isValidPassword = await bcrypt.compare(password, user.passwordHash)
-      if (!isValidPassword) {
-        return NextResponse.json(
-          { success: false, error: 'Email yoki parol noto\'g\'ri' },
-          { status: 401 }
-        )
-      }
-
-      targetUser = user
-    } catch {
-      // Offline dev mode fallback demo user
-      targetUser = {
-        id: 'user-demo-01',
-        name: 'Suxrob Sadullayev',
-        email,
-        phone: '+998901234567',
-        role: email.includes('admin') ? 'super_admin' : 'buyer',
-      }
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Email yoki parol noto\'g\'ri' },
+        { status: 401 }
+      )
     }
 
-    const sessionToken = `session_${Date.now()}_${targetUser.id}`
+    if (user.isBlocked) {
+      return NextResponse.json(
+        { success: false, error: 'Hisobingiz bloklangan. Qo\'llab-quvvatlash xizmatiga murojaat qiling.' },
+        { status: 403 }
+      )
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash)
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { success: false, error: 'Email yoki parol noto\'g\'ri' },
+        { status: 401 }
+      )
+    }
+
+    // Generate signed HMAC session token
+    const sessionToken = createSessionToken(user.id, user.role, user.email)
+
     const response = NextResponse.json({
       success: true,
       message: 'Tizimga muvaffaqiyatli kirildi',
       user: {
-        id: targetUser.id,
-        name: targetUser.name,
-        email: targetUser.email,
-        phone: targetUser.phone,
-        role: targetUser.role,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
       },
     })
 
-    // Set HTTP-only session cookies
+    // Set secure HTTP-only session cookie
     response.cookies.set('session_token', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
-    response.cookies.set('user_role', targetUser.role, {
+    response.cookies.set('user_role', user.role, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -93,8 +82,9 @@ export async function POST(request: Request) {
 
     return response
   } catch (err: any) {
+    console.error('Login Error:', err)
     return NextResponse.json(
-      { success: false, error: err.message || 'Server error' },
+      { success: false, error: 'Serverda xatolik yuz berdi. Qayta urinib ko\'ring.' },
       { status: 500 }
     )
   }

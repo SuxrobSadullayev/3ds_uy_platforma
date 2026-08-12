@@ -2,8 +2,8 @@ services:
   - type: web
     name: 3ds-uy-platforma
     env: node
-    region: singapore
-    plan: free
+    region: frankfurt
+    plan: starter
     buildCommand: npm install && npm run build
     startCommand: npm run start
     envVars:
@@ -13,6 +13,8 @@ services:
         fromDatabase:
           name: 3ds-uy-db
           property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
       - key: JWT_SECRET
         generateValue: true
       - key: NEXT_PUBLIC_APP_URL
@@ -22,5 +24,5 @@ databases:
   - name: 3ds-uy-db
     databaseName: uy_platforma_db
     user: uy_admin
-    plan: free
-    region: singapore
+    plan: starter
+    region: frankfurt

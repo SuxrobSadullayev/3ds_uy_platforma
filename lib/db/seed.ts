@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs'
 import { properties as sampleProperties } from '../data/properties'
-import { auctions as sampleAuctions } from '../data/auctions'
 import { db } from './index'
-import { auctions, properties, users } from './schema'
+import { properties, users } from './schema'
+import { eq } from 'drizzle-orm'
 
 async function seed() {
   console.log('🌱 Database Seeding boshlandi...')
@@ -11,7 +11,7 @@ async function seed() {
     const defaultPassword = await bcrypt.hash('password123', 10)
 
     // 1. Seed Users
-    const [demoSeller] = await db
+    let [demoSeller] = await db
       .insert(users)
       .values({
         name: 'Murad Buildings MCHJ',
@@ -23,9 +23,22 @@ async function seed() {
       .onConflictDoNothing()
       .returning()
 
-    const sellerId = demoSeller?.id || '00000000-0000-0000-0000-000000000000'
+    if (!demoSeller) {
+      // If user already existed, fetch existing seller ID
+      const [existing] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, 'info@muradbuildings.uz'))
+      demoSeller = existing
+    }
 
-    console.log('✅ Demo foydalanuvchilar yaratildi')
+    if (!demoSeller) {
+      throw new Error('❌ Demo seller sotuvchisini yaratib bo\'lmadi')
+    }
+
+    const sellerId = demoSeller.id
+
+    console.log('✅ Demo foydalanuvchilar tayyorlandi:', sellerId)
 
     // 2. Seed Properties
     for (const p of sampleProperties) {
@@ -45,16 +58,15 @@ async function seed() {
           type: p.type as any,
           status: 'active',
           has3D: p.has3D,
-          modelUrl: p.modelUrl,
+          modelUrl: (p as any).modelUrl || null,
           rentToOwn: p.rentToOwn,
-          monthlyRent: p.monthlyRent,
+          monthlyRent: (p as any).monthlyRent || null,
           sellerId,
         })
         .onConflictDoNothing()
     }
 
-    console.log('✅ Demo mulklar bazaga kirizildi')
-
+    console.log('✅ Demo mulklar bazaga kiritildi')
     console.log('🎉 DB Seeder muvaffaqiyatli yakunlandi!')
     process.exit(0)
   } catch (err) {

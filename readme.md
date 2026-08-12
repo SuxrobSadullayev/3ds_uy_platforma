@@ -36,7 +36,7 @@
 | **Loyiha nomi** | 3D Ko'chmas Mulk Platformasi |
 | **Qisqa nomi** | 3D MULK |
 | **Maqsad bozor** | O'zbekiston Respublikasi |
-| **Platformalar** | Web (brauzer) + iOS ilova + Android ilova |
+| **Platformalar** | Web (Next.js 16) + Responsive Mobile Web Interface (PWA Ready) |
 | **Hujjat versiyasi** | v1.0 — Boshlang'ich TZ (Draft) |
 | **Tuzilgan sana** | Iyul 2026 |
 | **Holati** | Loyiha bosqichi |

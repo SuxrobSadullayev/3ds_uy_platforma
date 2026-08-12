@@ -22,10 +22,10 @@ const footerSections = [
   {
     title: "Ma'lumot",
     links: [
-      { href: '#', label: 'Biz haqimizda' },
-      { href: '#', label: 'Maxfiylik siyosati' },
-      { href: '#', label: 'Foydalanish shartlari' },
-      { href: '#', label: "Bog'lanish" },
+      { href: '/haqimizda', label: 'Biz haqimizda' },
+      { href: '/maxfiylik', label: 'Maxfiylik siyosati' },
+      { href: '/shartlar', label: 'Foydalanish shartlari' },
+      { href: '/boglanish', label: "Bog'lanish" },
     ],
   },
 ]

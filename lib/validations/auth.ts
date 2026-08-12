@@ -25,8 +25,8 @@ export const registerSchema = z
     password: z.string().min(8, "Parol kamida 8 ta belgi bo'lishi kerak"),
     confirmPassword: z.string(),
     role: userRoleSchema.default('xaridor'),
-    acceptTerms: z.literal(true, {
-      errorMap: () => ({ message: "Foydalanish shartlariga rozilik bildirishingiz kerak" }),
+    acceptTerms: z.boolean().refine((val) => val === true, {
+      message: "Foydalanish shartlariga rozilik bildirishingiz kerak",
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {

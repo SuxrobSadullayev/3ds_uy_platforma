@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { verifySessionToken } from '@/lib/auth/session'
 
 // Protected route to required roles mapping
 const PROTECTED_ROUTES: { prefix: string; allowedRoles: string[] }[] = [
@@ -10,7 +11,18 @@ const PROTECTED_ROUTES: { prefix: string; allowedRoles: string[] }[] = [
   { prefix: '/bank', allowedRoles: ['bank', 'super_admin'] },
   { prefix: '/davlat-operator', allowedRoles: ['state_operator', 'super_admin'] },
   { prefix: '/xaridor', allowedRoles: ['buyer', 'super_admin'] },
-  { prefix: '/profil', allowedRoles: ['super_admin', 'company', 'buyer', 'investor', 'realtor', 'bank', 'state_operator'] },
+  {
+    prefix: '/profil',
+    allowedRoles: [
+      'super_admin',
+      'company',
+      'buyer',
+      'investor',
+      'realtor',
+      'bank',
+      'state_operator',
+    ],
+  },
 ]
 
 export function middleware(request: NextRequest) {
@@ -20,21 +32,22 @@ export function middleware(request: NextRequest) {
   const protectedRoute = PROTECTED_ROUTES.find((r) => pathname.startsWith(r.prefix))
 
   if (protectedRoute) {
-    const sessionToken =
-      request.cookies.get('session_token')?.value ||
-      request.cookies.get('better-auth.session_token')?.value
-    const userRole = request.cookies.get('user_role')?.value || 'buyer'
+    const sessionToken = request.cookies.get('session_token')?.value
+    const sessionPayload = verifySessionToken(sessionToken)
 
-    // If no session token, redirect to login page with callback URL
-    if (!sessionToken) {
+    // If session token is missing or invalid/expired, redirect to login
+    if (!sessionPayload) {
       const loginUrl = new URL('/kirish', request.url)
       loginUrl.searchParams.set('callbackUrl', pathname)
-      return NextResponse.redirect(loginUrl)
+      const response = NextResponse.redirect(loginUrl)
+      // Clear invalid session cookies
+      response.cookies.delete('session_token')
+      response.cookies.delete('user_role')
+      return response
     }
 
-    // Role-based Access Control Check
-    if (!protectedRoute.allowedRoles.includes(userRole)) {
-      // Redirect to unauthorized or home page
+    // Role-based Access Control Check using cryptographically verified role
+    if (!protectedRoute.allowedRoles.includes(sessionPayload.role)) {
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
