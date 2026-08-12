@@ -37,12 +37,13 @@ export async function POST(request: Request) {
     }
 
     const { fullName, email, phone, password, role } = validationResult.data
+    const sanitizedEmail = email.trim().toLowerCase()
 
     // Sanitize role: public registration cannot create admins or super_admins
     const mappedRole = ROLE_MAP[role] || 'buyer'
 
     // Check existing user in DB
-    const existing = await db.select().from(users).where(eq(users.email, email))
+    const existing = await db.select().from(users).where(eq(users.email, sanitizedEmail))
     if (existing.length > 0) {
       return NextResponse.json(
         { success: false, error: 'Ushbu email bilan foydalanuvchi allaqachon mavjud' },
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       .insert(users)
       .values({
         name: fullName,
-        email,
+        email: sanitizedEmail,
         phone,
         role: mappedRole,
         passwordHash: hashedPassword,
@@ -93,14 +94,6 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-
-    response.cookies.set('user_role', newUser.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
     })
 
     return response

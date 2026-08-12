@@ -7,7 +7,6 @@ export const userRoleSchema = z.enum([
   'investor',
   'bank',
   'davlat',
-  'admin',
 ])
 
 export const loginSchema = z.object({

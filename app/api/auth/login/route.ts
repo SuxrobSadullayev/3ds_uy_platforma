@@ -23,8 +23,9 @@ export async function POST(request: Request) {
     }
 
     const { email, password } = validationResult.data
+    const sanitizedEmail = email.trim().toLowerCase()
 
-    const [user] = await db.select().from(users).where(eq(users.email, email))
+    const [user] = await db.select().from(users).where(eq(users.email, sanitizedEmail))
 
     if (!user) {
       return NextResponse.json(
@@ -70,14 +71,6 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-
-    response.cookies.set('user_role', user.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
     })
 
     return response
